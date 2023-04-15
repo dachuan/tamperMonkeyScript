@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         underliner for rapid reading
+// @name         Rapid Reading Underline
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  red underline to induce eye-movement
-// @author       dcthe
+// @version      0.0.1
+// @description  ctr + shift + k  for activate underline
+// @author       dcthehiker
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
 // @grant        none
@@ -11,11 +11,67 @@
 
 (function() {
     'use strict';
+
     // setting
-    const pace = 10;                // how many texts underlined 
-    const delay = 300;              // time delayed 
-    const line_color = 'red';       // underline color
-    const frame_color = '#55c8d7';  // selected frame color
+    const pace = 10;// how many texts underlined
+    const delay = 300;// time delayed
+    const line_color = 'red';// underline color
+    const frame_color = '#55c8d7';// selected frame color
+    let act_it = false; // activate function or not
+
+    // Define the key combination to listen for
+    const keys = {
+        ctrl: false,
+        alt: false,
+        shift: false,
+        key: ''
+    };
+
+    // Listen for keydown events
+    document.addEventListener('keydown', event => {
+        // Update the keys object based on which key was pressed
+        switch (event.key) {
+            case 'Control':
+                keys.ctrl = true;
+                break;
+            case 'Alt':
+                keys.alt = true;
+                break;
+            case 'Shift':
+                keys.shift = true;
+                break;
+            default:
+                keys.key = event.key;
+                break;
+        }
+
+        // Check if the key combination was pressed
+        // 设置了 ctr shift k
+        if (keys.ctrl && keys.shift && keys.key === 'K') {
+            // Do something here
+            console.log("combo key pressed.");
+            act_it = true;
+        }
+    });
+
+    // Listen for keyup events
+    document.addEventListener('keyup', event => {
+        // Update the keys object based on which key was released
+        switch (event.key) {
+            case 'Control':
+                keys.ctrl = false;
+                break;
+            case 'Alt':
+                keys.alt = false;
+                break;
+            case 'Shift':
+                keys.shift = false;
+                break;
+            default:
+                keys.key = '';
+                break;
+        }
+    });
 
     // underline the text nodes
     // --------------------
@@ -76,38 +132,38 @@
     let onProcessing = false; //check if is on the running
 
     function highlightElement(element) {
-      element.style.outline = `1px solid ${frame_color}`;
-      //element.style.outline = '1px solid navy';
+        element.style.outline = `1px solid ${frame_color}`;
+        //element.style.outline = '1px solid navy';
     }
-  
+
     function removeHighlight(element) {
-      element.style.outline = '';
+        element.style.outline = '';
     }
-  
+
     document.addEventListener('mouseover', event => {
-      const element = event.target;
-      if(!onProcessing){
-        highlightElement(element);
-      }
+        const element = event.target;
+        if(!onProcessing && act_it){
+            highlightElement(element);
+        }
     });
-  
+
     document.addEventListener('mouseout', event => {
-      const element = event.target;
-      if(!onProcessing){
-        removeHighlight(element);
-      }
+        const element = event.target;
+        if(!onProcessing && act_it){
+            removeHighlight(element);
+        }
     });
-  
+
 
     document.addEventListener('click', event => {
-      const element = event.target;
-      onProcessing = true;
-      processAllTextNodes(element).then(result => {
-        onProcessing = false;
-        removeHighlight(element);
-      });
+        const element = event.target;
+        if (act_it){
+            onProcessing = true;
+            act_it = false;
+            processAllTextNodes(element).then(result => {
+            onProcessing = false;
+            removeHighlight(element);
+        });
+        }
     });
-  
-  
-  
 })();
