@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Rapid Reading Underline
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
-// @description  ctr + shift + k  for activate underline
+// @version      0.0.4
+// @description  ctr + shift + k  for activate underline, q for catch text
 // @author       dcthehiker
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
@@ -16,8 +16,11 @@
     const pace = 10;// how many texts underlined
     const delay = 300;// time delayed
     const line_color = 'red';// underline color
+    const box_color = 'red';// catch text color
     const frame_color = '#55c8d7';// selected frame color
     let act_it = false; // activate function or not
+    let catch_it = false;// catch text or not
+    let onProcessing = false; //check if is on the running
 
     // Define the key combination to listen for
     const keys = {
@@ -46,12 +49,20 @@
         }
 
         // Check if the key combination was pressed
-        // 设置了 ctr shift k
+        // 设置了 ctr shift k as toggle
         if (keys.ctrl && keys.shift && keys.key === 'K') {
             // Do something here
             console.log("combo key pressed.");
             act_it = true;
         }
+
+        // check to catch text by key q
+        if (keys.key === 'q') {
+            // Do something here
+            console.log("catch text");
+            catch_it = true;
+        }
+
     });
 
     // Listen for keyup events
@@ -87,6 +98,10 @@
         return textNodes;
     }
 
+    function catchBox(seg){
+        seg.style.border = `2px solid ${box_color}`;
+    }
+
     async function animateUnderline(textNode) {
         const text = textNode.textContent;
         const parent = textNode.parentElement;
@@ -94,28 +109,33 @@
         const wrapper = document.createElement('span');
         parent.replaceChild(wrapper, textNode);
 
+        // segments in one textNode
+        // slice one textNode into several segs
         const range = pace;
+        const segs = [];
         for (let i = 0; i < text.length; i += range) {
-            const before = document.createElement('span');
-            before.textContent = text.slice(0, i);
-            wrapper.appendChild(before);
+            const seg = document.createElement('span');
+            seg.textContent = text.slice(i, i+range);
+            wrapper.appendChild(seg);
+            //seg.style.border = "2px solid red";
+            segs.push(seg);
+        }
 
-            const underline = document.createElement('span');
-            underline.textContent = text.slice(i, i + range);
-            underline.style.textDecoration = 'underline';
-            underline.style.textDecorationColor = line_color;
-            wrapper.appendChild(underline);
-
-            const after = document.createElement('span');
-            after.textContent = text.slice(i + range);
-            wrapper.appendChild(after);
+        for (let i=0;i < segs.length;i++){
+            segs[i].style.textDecoration = 'underline';
+            segs[i].style.textDecorationColor = line_color;
 
             await new Promise(r => setTimeout(r, delay));
 
-            wrapper.innerHTML = '';
+            // if q is pressed, cath this seg
+            if(catch_it){
+                catchBox(segs[i]);
+                catch_it = false;
+            }
+
+            segs[i].style.textDecoration = '';
         }
 
-        parent.replaceChild(textNode, wrapper);
     }
 
     async function processAllTextNodes(dom_js) {
@@ -129,11 +149,8 @@
     // do underline when click
     // --------------------
 
-    let onProcessing = false; //check if is on the running
-
     function highlightElement(element) {
         element.style.outline = `1px solid ${frame_color}`;
-        //element.style.outline = '1px solid navy';
     }
 
     function removeHighlight(element) {
@@ -153,7 +170,6 @@
             removeHighlight(element);
         }
     });
-
 
     document.addEventListener('click', event => {
         const element = event.target;
