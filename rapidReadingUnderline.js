@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Rapid Reading Underline
 // @namespace    http://tampermonkey.net/
-// @version      0.0.5
-// @description  ctr + shift + k  for activate underline, q for catch text
+// @version      0.0.6
+// @description  ctr + shift + k  for activate underline, ctr + f for catch text,ctr + h,l speed control
 // @author       dcthehiker
 // @match        *://*/*
 // @require      https://cdn.jsdelivr.net/npm/segmentit@2.0.3/dist/umd/segmentit.js
@@ -18,10 +18,11 @@ const segmentit = Segmentit.useDefault(new Segmentit.Segment());
 
     // setting
     const pace = 5;// how many words underlined
-    const delay = 300;// time delayed
+    let delay = 300;// time delayed
     const line_color = 'red';// underline color
     const box_color = 'red';// catch text color
     const frame_color = '#55c8d7';// selected frame color
+    let run_script = false; // activate this script
     let act_it = false; // activate function or not
     let catch_it = false;// catch text or not
     let onProcessing = false; //check if is on the running
@@ -55,16 +56,38 @@ const segmentit = Segmentit.useDefault(new Segmentit.Segment());
         // Check if the key combination was pressed
         // 设置了 ctr shift k as toggle
         if (keys.ctrl && keys.shift && keys.key === 'K') {
-            // Do something here
             console.log("combo key pressed.");
+            run_script = true;
             act_it = true;
         }
 
-        // check to catch text by key q
-        if (keys.key === 'q') {
-            // Do something here
-            console.log("catch text");
-            catch_it = true;
+        // check to catch text by key f
+        if (keys.ctrl && keys.key === 'f') {
+            if(run_script){
+                console.log("catch text");
+                catch_it = true;
+            }
+        }
+
+        // speed up and down by h l
+        if (keys.ctrl && keys.key === 'l') {
+            if(run_script){
+                console.log("speed down");
+                if (delay > 100){
+                    delay -= 100;
+                    console.log(delay);
+                }
+            }
+        }
+
+        if (keys.ctrl && keys.key === 'h') {
+            if(run_script){
+                console.log("speed up");
+                if (delay < 500){
+                    delay += 100;
+                    console.log(delay);
+                }
+            }
         }
 
     });
@@ -201,6 +224,7 @@ const segmentit = Segmentit.useDefault(new Segmentit.Segment());
             processAllTextNodes(element).then(result => {
             onProcessing = false;
             removeHighlight(element);
+            act_it = true;
         });
         }
     });
