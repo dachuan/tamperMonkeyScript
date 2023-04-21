@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GPT4 sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.0.7
+// @version      0.0.9
 // @description  diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -12,6 +12,9 @@
 
 (function() {
     'use strict';
+
+    // 脚本开关
+    let runScript = false;
 
     // 创建一个侧边栏容器
     const sidebar = document.createElement('div');
@@ -28,6 +31,7 @@
       padding: 0px;
       box-sizing: border-box;
       box-shadow: 2px 2px 4px #ccc;
+      opacity: 0;
       z-index: 9999;
     `;
 
@@ -82,13 +86,41 @@
     // 添加侧边栏到页面
     document.body.appendChild(sidebar);
 
+    // 添加一个控制sidebar出现的按钮
+    const toggleSidebar = document.createElement('button');
+    toggleSidebar.textContent = '+';
+    toggleSidebar.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #222;
+        color: white;
+        border: none;
+        outline: none;
+        cursor: pointer;
+    `;
+    
+    // 添加点击事件监听器
+    toggleSidebar.addEventListener('click', () => {
+        runScript = true;
+        toggleSidebar.style.backgroundColor = "#42bbf4";
+        sidebar.style.opacity = (sidebar.style.opacity === '0') ? '1' : '0';
+        sidebar.style.zIndex = (sidebar.style.opacity === '0') ? '-9999' : '9999';
+        toggleSidebar.textContent = (sidebar.style.opacity === '0') ? '+' : 'x';
+    });
+    
+    document.body.appendChild(toggleSidebar);
+
     document.addEventListener('mouseup', function (e) {
         const selectedText = window.getSelection().toString().trim();
         // 检测是否为sidebar中的文字
         // sidebar中的文字不做处理，避免重复添加
         const target = event.target;
 
-        if (selectedText.length > 0 && !sidebar.contains(target)) {
+        if (selectedText.length > 0 && !sidebar.contains(target) && runScript) {
             addToSidebar(selectedText, e);
             highlightSelectedText();
         }
