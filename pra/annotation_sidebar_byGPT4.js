@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GPT4 sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.0.4
+// @version      0.0.7
 // @description  diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -31,6 +31,54 @@
       z-index: 9999;
     `;
 
+    // Make the title fixed at the top of the sidebar
+    const titleContainer = document.createElement('div');
+    titleContainer.textContent = 'Quotations -------------------- click save all';
+    titleContainer.style.cssText = `
+        position: sticky;
+        top: 0;
+        font-size: 14px;
+        font-weight: bold;
+        background-color: #42bbf4;
+    `;
+    // 点击title复制所有文本条目
+    titleContainer.addEventListener('click', function(event) {
+        var sidebarText = '';
+        var sidebarItems = sidebar.querySelectorAll('.snippet');
+        for (var i = 0; i < sidebarItems.length; i++) {
+            sidebarText += sidebarItems[i].textContent + '\n';
+        }
+        navigator.clipboard.writeText(sidebarText);
+        tipOfCopy();
+    });
+
+    sidebar.appendChild(titleContainer);
+
+    // copied 消息提示
+    function tipOfCopy(){
+
+        // 创建提示元素
+        const tip = document.createElement('div');
+        tip.textContent = 'All quotations copied.';
+        tip.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transition: opacity 1s ease-in-out;
+            background-color: #42bbf4;
+            color: #fff;
+        `;
+        
+        // 插入到文档中
+        document.body.appendChild(tip);
+        
+        // 1 秒后隐藏提示
+        setTimeout(() => {
+          tip.style.opacity = '0';
+        }, 1000);
+    }
+
+
     // 添加侧边栏到页面
     document.body.appendChild(sidebar);
 
@@ -48,22 +96,25 @@
     let snippetCount = 0;
 
     // Define Diigo style for list items
-    var snippetStyle = 'list-style-type: none;' +
-                         'padding: 10px 5px;' +
-                         'margin: 10px 0;' +
-                         'border-left: 3px solid #feb92c;' +
-                         'background-color: #F5F5F5;' +
-                         'box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);' +
-                         'font-size: 12px;' +
-                         'font-weight: normal;' +
-                         'opacity: 0;' +
-                         'color: #333;';
+    var snippetStyle = `
+        list-style-type: none;
+        padding: 10px 5px;
+        margin: 10px 10px;
+        border-left: 3px solid #feb92c;
+        background-color: #F5F5F5;
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+        font-size: 12px;
+        font-weight: normal;
+        opacity: 0;
+        color: #333;
+    `;
 
     function addToSidebar(text, e) {
         const snippet = document.createElement('div');
         snippet.textContent = text;
         snippet.style.cssText = snippetStyle;
         snippet.dataset.index = snippetCount;
+        snippet.classList.add('snippet');
 
         snippetCount += 1;
 
