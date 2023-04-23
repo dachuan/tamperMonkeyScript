@@ -1,10 +1,12 @@
 // ==UserScript==
-// @name         GPT4 sidebar
+// @name         Quotations sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9
+// @version      0.0.10
 // @description  diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
+// @exclude      /^https://.*?126.com/*/
+
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
 // @grant        none
 // ==/UserScript==
@@ -32,7 +34,7 @@
       box-sizing: border-box;
       box-shadow: 2px 2px 4px #ccc;
       opacity: 0;
-      z-index: 9999;
+      z-index: -9999;
     `;
 
     // Make the title fixed at the top of the sidebar
@@ -72,10 +74,10 @@
             background-color: #42bbf4;
             color: #fff;
         `;
-        
+
         // 插入到文档中
         document.body.appendChild(tip);
-        
+
         // 1 秒后隐藏提示
         setTimeout(() => {
           tip.style.opacity = '0';
@@ -91,18 +93,18 @@
     toggleSidebar.textContent = '+';
     toggleSidebar.style.cssText = `
         position: fixed;
-        bottom: 20px;
+        top: 60px;
         right: 20px;
-        width: 50px;
-        height: 50px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
-        background-color: #222;
+        background-color: #aaa;
         color: white;
         border: none;
         outline: none;
         cursor: pointer;
     `;
-    
+
     // 添加点击事件监听器
     toggleSidebar.addEventListener('click', () => {
         runScript = true;
@@ -111,7 +113,7 @@
         sidebar.style.zIndex = (sidebar.style.opacity === '0') ? '-9999' : '9999';
         toggleSidebar.textContent = (sidebar.style.opacity === '0') ? '+' : 'x';
     });
-    
+
     document.body.appendChild(toggleSidebar);
 
     document.addEventListener('mouseup', function (e) {
@@ -171,8 +173,15 @@
     sidebar.appendChild(snippet);
 }
 
+    // 处理取消选择的情况
+    function handleKeyDown(event) {
+        if (event.key === 'Escape') {
+            window.getSelection().removeAllRanges();
+        }
+    }
+    document.addEventListener('keydown', handleKeyDown);
 
-
+    // 高亮选区
     function highlightSelectedText() {
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
@@ -188,6 +197,10 @@
             span.appendChild(content);
             range.insertNode(span);
             selection.removeAllRanges();
+
+            // 重新选中先前选中的文本
+            selection.removeAllRanges();
+            selection.addRange(range);
         }
     }
 
