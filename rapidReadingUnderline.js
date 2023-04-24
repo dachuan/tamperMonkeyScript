@@ -1,23 +1,28 @@
 // ==UserScript==
 // @name         Rapid Reading Underline
 // @namespace    http://tampermonkey.net/
-// @version      0.0.4
-// @description  ctr + shift + k  for activate underline, q for catch text
+// @version      0.0.6
+// @description  ctr + shift + k  for activate underline, ctr + f for catch text,ctr + h,l speed control
 // @author       dcthehiker
 // @match        *://*/*
+// @require      https://cdn.jsdelivr.net/npm/segmentit@2.0.3/dist/umd/segmentit.js
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
 // @grant        none
 // ==/UserScript==
+
+// use word segment 
+const segmentit = Segmentit.useDefault(new Segmentit.Segment());
 
 (function() {
     'use strict';
 
     // setting
-    const pace = 10;// how many texts underlined
-    const delay = 300;// time delayed
+    const pace = 5;// how many words underlined
+    let delay = 300;// time delayed
     const line_color = 'red';// underline color
     const box_color = 'red';// catch text color
     const frame_color = '#55c8d7';// selected frame color
+    let run_script = false; // activate this script
     let act_it = false; // activate function or not
     let catch_it = false;// catch text or not
     let onProcessing = false; //check if is on the running
@@ -51,16 +56,38 @@
         // Check if the key combination was pressed
         // 设置了 ctr shift k as toggle
         if (keys.ctrl && keys.shift && keys.key === 'K') {
-            // Do something here
             console.log("combo key pressed.");
+            run_script = true;
             act_it = true;
         }
 
-        // check to catch text by key q
-        if (keys.key === 'q') {
-            // Do something here
-            console.log("catch text");
-            catch_it = true;
+        // check to catch text by key f
+        if (keys.ctrl && keys.key === 'f') {
+            if(run_script){
+                console.log("catch text");
+                catch_it = true;
+            }
+        }
+
+        // speed up and down by h l
+        if (keys.ctrl && keys.key === 'l') {
+            if(run_script){
+                console.log("speed down");
+                if (delay > 100){
+                    delay -= 100;
+                    console.log(delay);
+                }
+            }
+        }
+
+        if (keys.ctrl && keys.key === 'h') {
+            if(run_script){
+                console.log("speed up");
+                if (delay < 500){
+                    delay += 100;
+                    console.log(delay);
+                }
+            }
         }
 
     });
@@ -111,13 +138,31 @@
 
         // segments in one textNode
         // slice one textNode into several segs
-        const range = pace;
+        // based on segmentit 
+        const word_segs = segmentit.doSegment(text);
+        const text_segs = [];
+        for (const w of word_segs){
+            const t = w.w;
+
+            text_segs.push(t);
+        }
+
+        // reform text_segs according to pace
+        function groupByPace(arr, pace) {
+            const result = [];
+            for (let i = 0; i < arr.length; i += pace) {
+              result.push(arr.slice(i, i + pace).join(""));
+            }
+            return result;
+        }
+
+        const group_segs = groupByPace(text_segs,pace);
+
         const segs = [];
-        for (let i = 0; i < text.length; i += range) {
+        for (let i = 0; i < group_segs.length; i++) {
             const seg = document.createElement('span');
-            seg.textContent = text.slice(i, i+range);
+            seg.textContent = group_segs[i];
             wrapper.appendChild(seg);
-            //seg.style.border = "2px solid red";
             segs.push(seg);
         }
 
@@ -179,6 +224,7 @@
             processAllTextNodes(element).then(result => {
             onProcessing = false;
             removeHighlight(element);
+            act_it = true;
         });
         }
     });
