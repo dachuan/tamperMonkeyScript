@@ -1,17 +1,13 @@
 // ==UserScript==
 // @name         Rapid Reading Underline
 // @namespace    http://tampermonkey.net/
-// @version      0.0.6
+// @version      0.0.66
 // @description  ctr + shift + k  for activate underline, ctr + f for catch text,ctr + h,l speed control
 // @author       dcthehiker
 // @match        *://*/*
-// @require      https://cdn.jsdelivr.net/npm/segmentit@2.0.3/dist/umd/segmentit.js
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
 // @grant        none
 // ==/UserScript==
-
-// use word segment 
-const segmentit = Segmentit.useDefault(new Segmentit.Segment());
 
 (function() {
     'use strict';
@@ -138,30 +134,11 @@ const segmentit = Segmentit.useDefault(new Segmentit.Segment());
 
         // segments in one textNode
         // slice one textNode into several segs
-        // based on segmentit 
-        const word_segs = segmentit.doSegment(text);
-        const text_segs = [];
-        for (const w of word_segs){
-            const t = w.w;
-
-            text_segs.push(t);
-        }
-
-        // reform text_segs according to pace
-        function groupByPace(arr, pace) {
-            const result = [];
-            for (let i = 0; i < arr.length; i += pace) {
-              result.push(arr.slice(i, i + pace).join(""));
-            }
-            return result;
-        }
-
-        const group_segs = groupByPace(text_segs,pace);
-
+        const range = pace;
         const segs = [];
-        for (let i = 0; i < group_segs.length; i++) {
+        for (let i = 0; i < text.length; i += range) {
             const seg = document.createElement('span');
-            seg.textContent = group_segs[i];
+            seg.textContent = text.slice(i, i+range);
             wrapper.appendChild(seg);
             segs.push(seg);
         }
