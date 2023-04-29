@@ -107,11 +107,11 @@
 
     // 添加点击事件监听器
     toggleSidebar.addEventListener('click', () => {
-        runScript = true;
         toggleSidebar.style.backgroundColor = "#42bbf4";
-        sidebar.style.opacity = (sidebar.style.opacity === '0') ? '1' : '0';
+        sidebar.style.opacity = (sidebar.style.opacity === '0' && runScript) ? '1' : '0';
         sidebar.style.zIndex = (sidebar.style.opacity === '0') ? '-9999' : '9999';
         toggleSidebar.textContent = (sidebar.style.opacity === '0') ? '+' : 'x';
+        runScript = true;
     });
 
     document.body.appendChild(toggleSidebar);
