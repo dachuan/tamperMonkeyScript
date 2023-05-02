@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         与机器人聊天
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
+// @version      0.0.2
 // @description  实现一个聊天对话框
 // @author       dcthehiker
 // @match        *://*/*
@@ -9,56 +9,99 @@
 // @grant        none
 // ==/UserScript==
 
+/* 基本样式调整完毕
+ * 输入框样式需要调整
+ */
+
 
 (function() {
     'use strict';
 
-    // Define the styles for user messages
-    var userMessageStyle = {
-        backgroundColor: '#007bff',
-        color: '#fff',
-        fontSize: '14px'
-    };
+    const chatBoxCSS = `
+        position : fixed;
+        bottom : 10px;
+        right : 10px;
+        backgroundColor : #fff;
+        border : 1px solid #000;
+        width : 300px;
+        height : 400px;
+        overflow : hidden;
+    `;
 
-    // Define the styles for bot messages
-    var botMessageStyle = {
-        backgroundColor: '#eeeeee',
-        color: '#000',
-        fontSize: '14px'
-    };
+    const chatLogCSS = `
+        display : flex;
+        flex-direction : column;
+        width : 100%;
+        height : 350px;
+        overflow : auto;
+    `;
+
+    const inputBoxCSS = `
+        width : 250px;
+        margin-left : 10px;
+        margin-right : 10px;
+    `;
+
+    const sendButtonCSS = `
+        margin-left : 240px;
+    `;
+
+    const userMessageCSS = `
+        text-align : right;
+        align-self : flex-end;
+        width : 80%;
+        margin-right : 10px;
+        margin-bottom : 10px;
+    `;
+
+    const botMessageCSS = `
+    text-align : left;
+    width : 80%;
+    margin-left : 10px;
+    margin-bottom : 10px;
+    `;
+
+    const userTextCSS = `
+        background-color :  #007bff;
+        color : #fff;
+        font-size : 14px;
+        display : inline-block;
+        text-align : left;
+    `;
+
+
+    const botTextCSS = `
+        background-color :  #eeeeee;
+        color : #000;
+        font-size : 14px;
+        display : inline-block;
+        text-align : left;
+    `;
 
     // Create the chat box
     var chatBox = document.createElement('div');
-    chatBox.style.position = 'fixed';
-    chatBox.style.bottom = '10px';
-    chatBox.style.right = '10px';
-    chatBox.style.backgroundColor = '#fff';
-    chatBox.style.border = '1px solid #000';
-    chatBox.style.width = '300px';
-    chatBox.style.height = '400px';
-    chatBox.style.overflow = 'hidden';
+    chatBox.style.cssText = chatBoxCSS;
     document.body.appendChild(chatBox);
 
     // Create the chat log
     var chatLog = document.createElement('div');
-    chatLog.style.width = '100%';
-    chatLog.style.height = '350px';
-    chatLog.style.overflow = 'auto';
+    chatLog.style.cssText = chatLogCSS;
     chatBox.appendChild(chatLog);
+
 
     // Create the input box
     var inputBox = document.createElement('input');
+    inputBox.style.cssText = inputBoxCSS;
     inputBox.type = 'text';
-    inputBox.style.width = '250px';
-    inputBox.style.marginLeft = '10px';
-    inputBox.style.marginRight = '10px';
     chatBox.appendChild(inputBox);
+
 
     // Create the send button
     var sendButton = document.createElement('button');
+    sendButton.style.cssText = sendButtonCSS;
     sendButton.innerHTML = 'Send';
-    sendButton.style.marginRight = '10px';
     chatBox.appendChild(sendButton);
+
 
     // Initialize the chat
     var chatHistory = [];
@@ -69,14 +112,13 @@
         if (userInput !== '') {
             // Add user message to chat log
             var userMessage = document.createElement('div');
-            userMessage.style.position = 'relative';
-            userMessage.style.textAlign = 'right';
-            userMessage.style.width = '100%';
-            userMessage.style.marginBottom = '5px';
-            userMessage.style.backgroundColor = userMessageStyle.backgroundColor;
-            userMessage.style.color = userMessageStyle.color;
-            userMessage.style.fontSize = userMessageStyle.fontSize;
-            userMessage.innerHTML = userInput;
+            userMessage.style.cssText = userMessageCSS;
+
+            // add span for text wrap
+            var userText = document.createElement('span');
+            userText.innerHTML = userInput;
+            userText.style.cssText = userTextCSS;
+            userMessage.appendChild(userText);
             chatLog.appendChild(userMessage);
 
             // Get the first word of the user message
@@ -87,13 +129,14 @@
 
             // Add bot message to chat log
             var botMessage = document.createElement('div');
-            botMessage.style.textAlign = 'left';
-            botMessage.style.width = '60%';
-            botMessage.style.marginBottom = '5px';
-            botMessage.style.backgroundColor = botMessageStyle.backgroundColor;
-            botMessage.style.color = botMessageStyle.color;
-            botMessage.style.fontSize = botMessageStyle.fontSize;
-            botMessage.innerHTML = botResponse;
+            botMessage.style.cssText = botMessageCSS;
+
+
+             // add span for text wrap
+            var botText = document.createElement('span');
+            botText.innerHTML = botResponse;
+            botText.style.cssText = botTextCSS;
+            botMessage.appendChild(botText);
             chatLog.appendChild(botMessage);
 
             // Clear the input box
