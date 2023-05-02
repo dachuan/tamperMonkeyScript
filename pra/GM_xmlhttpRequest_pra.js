@@ -14,6 +14,7 @@
     /* tamper monkey中的一个网络请求库
      * @grant 必须
      * onreadystatechange 里面的状态表明了请求状态
+     * 状态4 才能接收到responseText
      * 最终的请求回复在onload中
      * */
 
@@ -41,6 +42,7 @@ GM_xmlhttpRequest({
         break;
       case 4:
         console.log('请求已完成，且响应已就绪');
+        console.log(response.responseText);
         break;
     }
   }
