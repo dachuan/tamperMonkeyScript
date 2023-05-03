@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         与机器人聊天
 // @namespace    http://tampermonkey.net/
-// @version      0.0.2
+// @version      0.0.3
 // @description  实现一个聊天对话框
 // @author       dcthehiker
 // @match        *://*/*
@@ -9,8 +9,7 @@
 // @grant        none
 // ==/UserScript==
 
-/* 基本样式调整完毕
- * 输入框样式需要调整
+/* 输入框调整成textarea
  */
 
 
@@ -24,7 +23,7 @@
         backgroundColor : #fff;
         border : 1px solid #000;
         width : 300px;
-        height : 400px;
+        height : 440px;
         overflow : hidden;
     `;
 
@@ -36,14 +35,15 @@
         overflow : auto;
     `;
 
-    const inputBoxCSS = `
-        width : 250px;
-        margin-left : 10px;
-        margin-right : 10px;
+     const inputBoxCSS = `
+        width: 90%;
+        height: 60px;
+        margin-left : 15px;
+        box-sizing: border-box;
     `;
 
     const sendButtonCSS = `
-        margin-left : 240px;
+        margin-left : 250px;
     `;
 
     const userMessageCSS = `
@@ -55,10 +55,10 @@
     `;
 
     const botMessageCSS = `
-    text-align : left;
-    width : 80%;
-    margin-left : 10px;
-    margin-bottom : 10px;
+        text-align : left;
+        width : 80%;
+        margin-left : 10px;
+        margin-bottom : 10px;
     `;
 
     const userTextCSS = `
@@ -67,6 +67,7 @@
         font-size : 14px;
         display : inline-block;
         text-align : left;
+        white-space: pre-wrap;
     `;
 
 
@@ -76,6 +77,7 @@
         font-size : 14px;
         display : inline-block;
         text-align : left;
+        white-space: pre-wrap;
     `;
 
     // Create the chat box
@@ -90,9 +92,8 @@
 
 
     // Create the input box
-    var inputBox = document.createElement('input');
+    var inputBox = document.createElement('textarea');
     inputBox.style.cssText = inputBoxCSS;
-    inputBox.type = 'text';
     chatBox.appendChild(inputBox);
 
 
@@ -146,6 +147,13 @@
             chatLog.scrollTop = chatLog.scrollHeight;
         }
     });
+
+    // Add event listener to input box for "Enter" key
+    inputBox.addEventListener('keydown', function(event) {
+      if (event.keyCode === 13 && !event.shiftKey) {
+        event.preventDefault();
+        sendButton.click();
+      }
+    });
+
 })();
-
-
