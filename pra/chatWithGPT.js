@@ -1,15 +1,16 @@
 // ==UserScript==
 // @name         与机器人聊天
 // @namespace    http://tampermonkey.net/
-// @version      0.0.3
+// @version      0.0.4
 // @description  实现一个聊天对话框
 // @author       dcthehiker
-// @match        *://*/*
+// @match        file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/test/index.html
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
 // @grant        none
 // ==/UserScript==
 
 /* 输入框调整成textarea
+ * enter 发送
  */
 
 
