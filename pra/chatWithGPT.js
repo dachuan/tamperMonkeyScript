@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         与机器人聊天
 // @namespace    http://tampermonkey.net/
-// @version      0.0.4
+// @version      0.0.5
 // @description  实现一个聊天对话框
 // @author       dcthehiker
 // @match        file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/test/index.html
@@ -9,8 +9,8 @@
 // @grant        none
 // ==/UserScript==
 
-/* 输入框调整成textarea
- * enter 发送
+/* 流式显示成功
+ * 滚动条需要调整，目前没有跟着往下
  */
 
 
@@ -123,23 +123,18 @@
             userMessage.appendChild(userText);
             chatLog.appendChild(userMessage);
 
-            // Get the first word of the user message
-            var firstWord = userInput.split(' ')[0];
-
-            // Generate a response from the bot
-            var botResponse = 'I heard you say "' + firstWord + '".';
-
             // Add bot message to chat log
             var botMessage = document.createElement('div');
             botMessage.style.cssText = botMessageCSS;
 
-
              // add span for text wrap
             var botText = document.createElement('span');
-            botText.innerHTML = botResponse;
             botText.style.cssText = botTextCSS;
             botMessage.appendChild(botText);
             chatLog.appendChild(botMessage);
+
+            // update botText
+            streamResponse(userInput, botText);
 
             // Clear the input box
             inputBox.value = '';
@@ -149,6 +144,62 @@
         }
     });
 
+    // query from GPT in streaming data
+    function streamResponse(question, responseSpan) {
+    
+        const API_KEY = 'fk189028-nLqoall7vcbQ65xUXwqa3s7x8mgE9W7D';
+        const API_URL = 'https://openai.api2d.net/v1/chat/completions';
+    
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${API_KEY}`,
+        };
+    
+        const requestBody = {
+            model: 'gpt-3.5-turbo',
+            messages: [{ role: "user", content: question }],
+            stream: true,
+        };
+    
+        fetch(API_URL, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(requestBody),
+        }).then(response => {
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let partialData = '';
+            let response_str = '';
+    
+            reader.read().then(function processText({ done, value }) {
+                if (done) {
+                    console.log('Stream finished');
+                    return;
+                }
+    
+                // Convert Uint8Array to string
+                const chunk = decoder.decode(value, { stream: true });
+    
+                // Split string into lines
+                const lines = (partialData + chunk).split('\n');
+                partialData = lines.pop();
+    
+                lines.forEach(line => {
+                    const match = line.match(/{"content":"([^"]*)"/);
+                    if (match) {
+                        console.log(match[1]);
+                        response_str += match[1];
+                        // render botText
+                        responseSpan.innerHTML = response_str;
+                    }
+                });
+    
+                // Read next chunk of data
+                reader.read().then(processText);
+              });
+            });
+        }
+        
     // Add event listener to input box for "Enter" key
     inputBox.addEventListener('keydown', function(event) {
       if (event.keyCode === 13 && !event.shiftKey) {
