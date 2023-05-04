@@ -126,6 +126,8 @@
             addToSidebar(selectedText, e);
             highlightSelectedText();
         }
+        // 清除选区，避免重复添加
+       window.getSelection().removeAllRanges();
     });
     let snippetCount = 0;
 
