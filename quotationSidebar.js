@@ -103,6 +103,7 @@
         border: none;
         outline: none;
         cursor: pointer;
+        z-index: 999;
     `;
 
     // 添加点击事件监听器
