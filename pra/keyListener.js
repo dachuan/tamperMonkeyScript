@@ -41,26 +41,6 @@
             keys.key = event.key;
             break;
         }
-    
-      // Check if the key combination was pressed
-      if (keys.ctrl && keys.shift && keys.key === 'K') {
-        // Do something here
-        console.log("combo shift key pressed.");
-      }
-
-      // Check if the key combination was pressed
-      if (keys.ctrl && keys.alt && keys.key === 'K') {
-          // Do something here
-          console.log("combo alt key pressed.");
-      }
-
-      // Check if the key combination was pressed
-      if (keys.shift && keys.meta && keys.key === 'k') {
-          // Do something here
-          console.log("combo meta key pressed.");
-      }
-
-
       //console.log(keys);
     });
 
@@ -85,5 +65,29 @@
             break;
         }
     });
+
+    function listenAt(isSetKeys,callback){
+        // check global keys combination
+        // isSetKeys 是一个函数
+        // 用来判断按键组合
+        document.addEventListener('keydown', function(event) {
+            console.log('key pressed');
+            if (isSetKeys())
+            {
+                console.log('keys satisfied.');
+                callback();
+            }
+        });
+    }
+
+    function onAction(){
+        console.log('combo key pressed');
+        console.log(keys);
+    }
+
+    listenAt(() => {return keys.ctrl && keys.key == 'a'}, onAction);
+    listenAt(() => {return keys.shift && keys.key == 'K'}, onAction);
+    listenAt(() => {return keys.ctrl && keys.meta  && keys.key == 'k'}, onAction);
+
 })();
 
