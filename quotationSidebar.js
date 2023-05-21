@@ -1,12 +1,11 @@
 // ==UserScript==
 // @name         Quotations sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.0.10
+// @version      0.0.11
 // @description  diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
 // @exclude      /^https://.*?126.com/*/
-
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
 // @grant        none
 // ==/UserScript==
@@ -49,10 +48,20 @@
     `;
     // 点击title复制所有文本条目
     titleContainer.addEventListener('click', function(event) {
+
+        var url = window.location.origin + window.location.pathname;
+        var title = document.title;
+        var linkage = `[${title}](${url})`;
+
         var sidebarText = '';
+
+        // add linkage
+        sidebarText += linkage + '\n';
+
         var sidebarItems = sidebar.querySelectorAll('.snippet');
         for (var i = 0; i < sidebarItems.length; i++) {
-            sidebarText += sidebarItems[i].textContent + '\n';
+            // 缩进
+            sidebarText += `    ` + sidebarItems[i].textContent + '\n';
         }
         navigator.clipboard.writeText(sidebarText);
         tipOfCopy();
@@ -103,7 +112,7 @@
         border: none;
         outline: none;
         cursor: pointer;
-        z-index: 999;
+        z-index: 9999;
     `;
 
     // 添加点击事件监听器
@@ -126,9 +135,9 @@
         if (selectedText.length > 0 && !sidebar.contains(target) && runScript) {
             addToSidebar(selectedText, e);
             highlightSelectedText();
+            // 清除选区，避免重复添加
+            window.getSelection().removeAllRanges();
         }
-        // 清除选区，避免重复添加
-       window.getSelection().removeAllRanges();
     });
     let snippetCount = 0;
 
