@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         B站笔记快捷键←↓→
 // @namespace    indefined
-// @version      0.1
+// @version      0.2
 // @description  修改大王鹅鹅鹅script
 // @author       dcthe
 // @match        http*://www.bilibili.com/video/*
@@ -10,61 +10,44 @@
 // @license      AGPL License
 // ==/UserScript==
 
+/*
+ * 改用setTimeout的套嵌来实现多个按键按下
+ *  2023/5/23 下午2:36
+ * */
+
 (function() {
     'use strict';
-
-    // 定义一个异步函数
-    async function setTime_screenShot() {
-      // 等待btn1出现并点击
-      await new Promise(resolve => {
-        const interval = setInterval(() => {
-          const time_btn = document.querySelector('i.bili-note-iconfont.iconicon_flag_L');
-          if (time_btn) {
-            clearInterval(interval);
-            time_btn.click();
-            //console.log('按钮1已点击');
-            resolve();
-          }
-        }, 300);
-      });
-    
-      // 等待100毫秒
-      await new Promise(resolve => setTimeout(resolve, 100));
-    
-      // 等待确认按钮出现并点击
-      await new Promise(resolve => {
-        const interval = setInterval(() => {
-          const btn = document.querySelector('div.dialog-btn.tag-dialog__btn--confirm:nth-child(2)');
-          if (btn) {
-            clearInterval(interval);
-            btn.click();
-            //console.log('按钮2已点击');
-            resolve();
-          }
-        }, 100);
-      });
-    
-      // 等待100毫秒
-      await new Promise(resolve => setTimeout(resolve, 100));
-    
-      // 点击截图按钮
-      const screen_btn = document.querySelector('i.bili-note-iconfont.iconcapture-app');
-      await screen_btn.click();
-      //console.log('按钮3已点击');
-
-      // 拉到文末
-      await new Promise(resolve => setTimeout(resolve, 100));
-      document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered").click();
-      await new Promise(resolve => setTimeout(resolve, 100));
-      document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered").click();
-
-    }
 
     // JS监听键盘快捷键事件
     document.addEventListener('keydown', function (event)
     {
         if (event.ctrlKey && event.keyCode == 13) {//截图+时间戳——快捷键：ctrl+Enter
-            setTime_screenShot();
+            
+            // 3 buttons here
+            const time_btn = document.querySelector('i.bili-note-iconfont.iconicon_flag_L');
+            let yes_btn;
+            const screen_btn = document.querySelector('i.bili-note-iconfont.iconcapture-app');
+            const list_btn =  document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered");
+            
+            // one by one click
+            setTimeout(function() { //click time botton
+              time_btn.click();
+              setTimeout(function() { //wait for yes_btn appear
+                  if(!yes_btn){
+                    yes_btn = document.querySelector('div.dialog-btn.tag-dialog__btn--confirm:nth-child(2)');
+                  }
+                setTimeout(function() { //click yes_btn
+                  yes_btn.click();
+                  setTimeout(function() { //click screen_btn
+                    screen_btn.click();
+                    setTimeout(function(){ //click list_btn to bottom
+                      list_btn.click();
+                      list_btn.click();
+                    }, 100);
+                  }, 100);
+                }, 100);
+              },200);
+            }, 100);
         }
 
         if (event.ctrlKey && event.keyCode == 32) {//插入文本：Ctrl+space
@@ -135,6 +118,54 @@
 */
     });
 
+    /* 异步实现多个按钮依次按下
+    // 定义一个异步函数
+    async function setTime_screenShot() {
+      // 等待btn1出现并点击
+      await new Promise(resolve => {
+        const interval = setInterval(() => {
+          const time_btn = document.querySelector('i.bili-note-iconfont.iconicon_flag_L');
+          if (time_btn) {
+            clearInterval(interval);
+            time_btn.click();
+            //console.log('按钮1已点击');
+            resolve();
+          }
+        }, 300);
+      });
+    
+      // 等待100毫秒
+      await new Promise(resolve => setTimeout(resolve, 100));
+    
+      // 等待确认按钮出现并点击
+      await new Promise(resolve => {
+        const interval = setInterval(() => {
+          const btn = document.querySelector('div.dialog-btn.tag-dialog__btn--confirm:nth-child(2)');
+          if (btn) {
+            clearInterval(interval);
+            btn.click();
+            //console.log('按钮2已点击');
+            resolve();
+          }
+        }, 100);
+      });
+    
+      // 等待100毫秒
+      await new Promise(resolve => setTimeout(resolve, 100));
+    
+      // 点击截图按钮
+      const screen_btn = document.querySelector('i.bili-note-iconfont.iconcapture-app');
+      await screen_btn.click();
+      //console.log('按钮3已点击');
+
+      // 拉到文末
+      await new Promise(resolve => setTimeout(resolve, 100));
+      document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered").click();
+      await new Promise(resolve => setTimeout(resolve, 100));
+      document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered").click();
+
+    }
+    */
 
 })();
 
