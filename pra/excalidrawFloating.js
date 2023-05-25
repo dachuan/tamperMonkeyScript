@@ -1,80 +1,78 @@
 // ==UserScript==
-// @name         Excalidraw in browser
+// @name         Insert HTML as iframe on current page
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  Add Excalidraw to any website
-// @match        *://*/*
+// @version      1.0
+// @description  Inserts HTML code as an iframe on the current page
+// @match        http://*/*
+// @match        https://*/*
 // @grant        none
-// @require      https://unpkg.com/react@18.2.0/umd/react.development.js
-// @require      https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js
-// @require      https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.development.js
 // ==/UserScript==
 
-(function () {
-  'use strict';
+(function() {
+    'use strict';
 
-  const createExcalidrawButton = () => {
-    const button = document.createElement('button');
-    button.innerHTML = 'Excalidraw';
-    button.style.position = 'fixed';
-    button.style.right = '20px';
-    button.style.bottom = '20px';
-    button.style.zIndex = 9999;
-    button.onclick = () => {
-      createExcalidrawOverlay();
-    };
-    document.body.appendChild(button);
-  };
+    // Get the HTML code to insert as an iframe
+    const _html = `<!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Document</title>
+            </head>
+            <body>
+                hello tm script!
+            </body>
+        </html>`;
 
-  const createExcalidrawOverlay = () => {
-    const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.left = '0';
-    overlay.style.right = '0';
-    overlay.style.top = '0';
-    overlay.style.bottom = '0';
-    overlay.style.zIndex = 10000;
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-    document.body.appendChild(overlay);
+    const html = `<!DOCTYPE html>
+        <html>
+          <head>
+            <title>Excalidraw in browser</title>
+            <meta charset="UTF-8" />
+            <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
+            <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
 
-    const excalidrawContainer = document.createElement('div');
-    excalidrawContainer.style.width = '80%';
-    excalidrawContainer.style.height = '80%';
-    excalidrawContainer.style.margin = '5% auto';
-    excalidrawContainer.style.backgroundColor = 'white';
-    overlay.appendChild(excalidrawContainer);
+            <script
+          type="text/javascript"
+          src="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.development.js"
+        ></script>
+          </head>
 
-    const closeButton = document.createElement('button');
-    closeButton.innerHTML = 'Close';
-    closeButton.style.position = 'absolute';
-    closeButton.style.right = '20px';
-    closeButton.style.top = '20px';
-    closeButton.onclick = () => {
-      document.body.removeChild(overlay);
-    };
-    overlay.appendChild(closeButton);
+          <body>
+            <div class="container">
+              <h1>Excalidraw Embed Example</h1>
+              <div id="app"></div>
+            </div>
+            <script type="text/javascript" src="src/index.js"></script>
+            <script>const App = () => {
+              return React.createElement(
+                  React.Fragment,
+                      null,
+                          React.createElement(
+                                "div",
+                                      {
+                                              style: { height: "500px" },
+                                                    },
+                                                          React.createElement(ExcalidrawLib.Excalidraw),
+                                                              ),
+                                                                );
+                                                                };
 
-    loadExcalidraw(excalidrawContainer);
-  };
+                                                                const excalidrawWrapper = document.getElementById("app");
+                                                                const root = ReactDOM.createRoot(excalidrawWrapper);
+                                                                root.render(React.createElement(App));</script>
+          </body>
+        </html>`;
+    // Create a new iframe element
+    const iframe = document.createElement('iframe');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.position = 'fixed';
+    iframe.style.top = '0';
+    iframe.style.left = '0';
+    iframe.style.zIndex = '999999';
+    iframe.srcdoc = html;
 
-  const loadExcalidraw = (container) => {
-    const App = () => {
-      return React.createElement(
-        React.Fragment,
-        null,
-        React.createElement(
-          'div',
-          {
-            style: { height: '100%', width: '100%' },
-          },
-          React.createElement(ExcalidrawLib.Excalidraw),
-        ),
-      );
-    };
-
-    const root = ReactDOM.createRoot(container);
-    root.render(React.createElement(App));
-  };
-
-  createExcalidrawButton();
-})();
+    // Append the iframe to the body of the current page
+document.body.appendChild(iframe);
+})(); 

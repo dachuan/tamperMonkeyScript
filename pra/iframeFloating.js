@@ -1,78 +1,108 @@
 // ==UserScript==
-// @name         Insert HTML as iframe on current page
+// @name         Split Screen Iframe
 // @namespace    http://tampermonkey.net/
-// @version      1.0
-// @description  Inserts HTML code as an iframe on the current page
-// @match        http://*/*
-// @match        https://*/*
+// @version      0.1
+// @description  Split screen with two iframes and adjustable divider
+// @author       GPT-4
+// @match        *://*/*
 // @grant        none
 // ==/UserScript==
+
+/*
+ * GPT实现了左右分屏，并且可以拖动调整大小
+ *
+ * */
 
 (function() {
     'use strict';
 
-    // Get the HTML code to insert as an iframe
-    const _html = `<!DOCTYPE html>
-        <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Document</title>
-            </head>
-            <body>
-                hello tm script!
-            </body>
-        </html>`;
+    // Save the original content
+    const originalContent = document.documentElement.innerHTML;
 
-    const html = `<!DOCTYPE html>
-        <html>
-          <head>
-            <title>Excalidraw in browser</title>
-            <meta charset="UTF-8" />
-            <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
-            <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    // Clear the current content and set up the container
+    document.documentElement.innerHTML = '';
+    const container = document.createElement('div');
+    container.style.height = '100%';
+    container.style.width = '100%';
+    container.style.position = 'fixed';
+    container.style.top = '0';
+    container.style.left = '0';
+    document.documentElement.appendChild(container);
 
-            <script
-          type="text/javascript"
-          src="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.development.js"
-        ></script>
-          </head>
+    // Create the left iframe and set its content
+    const leftIframe = createIframe('0', '50%', container);
+    leftIframe.contentWindow.document.write(originalContent);
 
-          <body>
-            <div class="container">
-              <h1>Excalidraw Embed Example</h1>
-              <div id="app"></div>
-            </div>
-            <script type="text/javascript" src="src/index.js"></script>
-            <script>const App = () => {
-              return React.createElement(
-                  React.Fragment,
-                      null,
-                          React.createElement(
-                                "div",
-                                      {
-                                              style: { height: "500px" },
-                                                    },
-                                                          React.createElement(ExcalidrawLib.Excalidraw),
-                                                              ),
-                                                                );
-                                                                };
+    // Create the right iframe and set its content
+    const rightIframe = createIframe('50%', '50%', container);
+    rightIframe.contentWindow.document.write('<h1>Hello world</h1>');
 
-                                                                const excalidrawWrapper = document.getElementById("app");
-                                                                const root = ReactDOM.createRoot(excalidrawWrapper);
-                                                                root.render(React.createElement(App));</script>
-          </body>
-        </html>`;
-    // Create a new iframe element
-    const iframe = document.createElement('iframe');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.position = 'fixed';
-    iframe.style.top = '0';
-    iframe.style.left = '0';
-    iframe.style.zIndex = '999999';
-    iframe.srcdoc = html;
+    // Create the divider
+    const divider = document.createElement('div');
+    divider.style.width = '4px';
+    divider.style.height = '100%';
+    divider.style.backgroundColor = '#ccc';
+    divider.style.position = 'absolute';
+    divider.style.top = '0';
+    divider.style.left = '50%';
+    divider.style.cursor = 'col-resize';
+    container.appendChild(divider);
 
-    // Append the iframe to the body of the current page
-document.body.appendChild(iframe);
-})(); 
+    // Create the transparent overlay
+    const overlay = document.createElement('div');
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.position = 'absolute';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.zIndex = '9999';
+    overlay.style.display = 'none';
+
+    container.appendChild(overlay);
+
+    // Make the divider draggable
+    divider.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        overlay.style.display = 'block';
+        document.documentElement.style.userSelect = 'none';
+
+        const onMouseMove = (e) => {
+            const x = e.clientX;
+            const width = window.innerWidth;
+            const percentage = (x / width) * 100;
+
+            if (percentage < 10 || percentage > 90) {
+                return;
+            }
+            leftIframe.style.width = `${percentage}%`;
+            divider.style.left = `${percentage}%`;
+            rightIframe.style.left = `${percentage + 0.5}%`;
+            rightIframe.style.width = `${100 - percentage - 0.5}%`;
+        };
+
+        const onMouseUp = () => {
+            document.documentElement.style.userSelect = '';
+            overlay.style.display = 'none';
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+
+    function createIframe(left, width, container) {
+        const iframe = document.createElement('iframe');
+        iframe.style.width = width;
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.position = 'absolute';
+        iframe.style.top = '0';
+        iframe.style.left = left;
+        container.appendChild(iframe);
+        iframe.contentWindow.document.open();
+        iframe.contentWindow.document.close();
+        return iframe;
+    }
+
+})();
