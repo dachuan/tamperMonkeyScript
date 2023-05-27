@@ -1,17 +1,20 @@
 // ==UserScript==
-// @name         Split Screen Iframe
+// @name         Split Screen Div
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  Split screen with two iframes and adjustable divider
+// @version      0.2
+// @description  Split screen with two divs and adjustable divider
 // @author       GPT-4
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
 
 /*
- * GPT实现了左右分屏，并且可以拖动调整大小
- *
+ * GPT 实现了双栏分割
+ * 拖动分割线调整栏目宽度
+ * 抛弃使用iframe
+ * 但是跨域加载js，仍旧有问题
  * */
+
 
 (function() {
     'use strict';
@@ -29,54 +32,39 @@
     container.style.left = '0';
     document.documentElement.appendChild(container);
 
-    // Create the left iframe and set its content
-    const leftIframe = createIframe('0', '50%', container);
-    leftIframe.contentWindow.document.write(originalContent);
+    // Create the left div and set its content
+    const leftDiv = createDiv('0', 'calc(50% - 2px)', container);
+    leftDiv.innerHTML = originalContent;
 
-    // Create the right iframe and set its content
-    const rightIframe = createIframe('50%', '50%', container);
-    
-    const excaliframe = `<!DOCTYPE html>
-        <html>
-          <head>
-            <title>Excalidraw in browser</title>
-            <meta charset="UTF-8" />
-            <script src="https://unpkg.com/react@18.2.0/umd/react.development.js"></script>
-            <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+    // Create the right div and set its content
+    const rightDiv = createDiv('calc(50% + 2px)', 'calc(50% - 2px)', container);
+    const excalidrawWrapper = document.createElement('div');
+    excalidrawWrapper.style.height = '100%';
+    rightDiv.appendChild(excalidrawWrapper);
 
-            <script
-          type="text/javascript"
-          src="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.development.js"
-        ></script>
-          </head>
+    // Load Excalidraw
+    Promise.all([
+        loadScript('https://unpkg.com/react@18.2.0/umd/react.development.js'),
+        loadScript('https://unpkg.com/react-dom@18.2.0/umd/react-dom.development.js'),
+        loadScript('https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.development.js'),
+    ]).then(() => {
+        const App = () => {
+            return React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(
+                    'div',
+                    {
+                        style: { height: '100%' },
+                    },
+                    React.createElement(ExcalidrawLib.Excalidraw)
+                )
+            );
+        };
 
-          <body>
-            <div class="container">
-              <h1>Excalidraw Embed Example</h1>
-              <div id="app"></div>
-            </div>
-            <script type="text/javascript" src="src/index.js"></script>
-            <script>const App = () => {
-              return React.createElement(
-                  React.Fragment,
-                      null,
-                          React.createElement(
-                                "div",
-                                      {
-                                              style: { height: "500px" },
-                                                    },
-                                                          React.createElement(ExcalidrawLib.Excalidraw),
-                                                              ),
-                                                                );
-                                                                };
-
-                                                                const excalidrawWrapper = document.getElementById("app");
-                                                                const root = ReactDOM.createRoot(excalidrawWrapper);
-                                                                root.render(React.createElement(App));</script>
-          </body>
-        </html>`;
-    rightIframe.contentWindow.document.write(excaliframe);
-    //rightIframe.contentWindow.document.write('<h1>Hello world</h1>');
+        const root = ReactDOM.createRoot(excalidrawWrapper);
+        root.render(React.createElement(App));
+    });
 
     // Create the divider
     const divider = document.createElement('div');
@@ -85,26 +73,13 @@
     divider.style.backgroundColor = '#ccc';
     divider.style.position = 'absolute';
     divider.style.top = '0';
-    divider.style.left = '50%';
+    divider.style.left = 'calc(50% - 2px)';
     divider.style.cursor = 'col-resize';
     container.appendChild(divider);
-
-    // Create the transparent overlay
-    const overlay = document.createElement('div');
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.position = 'absolute';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.zIndex = '9999';
-    overlay.style.display = 'none';
-
-    container.appendChild(overlay);
 
     // Make the divider draggable
     divider.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        overlay.style.display = 'block';
         document.documentElement.style.userSelect = 'none';
 
         const onMouseMove = (e) => {
@@ -115,15 +90,14 @@
             if (percentage < 10 || percentage > 90) {
                 return;
             }
-            leftIframe.style.width = `${percentage}%`;
-            divider.style.left = `${percentage}%`;
-            rightIframe.style.left = `${percentage + 0.5}%`;
-            rightIframe.style.width = `${100 - percentage - 0.5}%`;
+            leftDiv.style.width = `calc(${percentage}% - 2px)`;
+            divider.style.left = `calc(${percentage}% - 2px)`;
+            rightDiv.style.left = `calc(${percentage}% + 2px)`;
+            rightDiv.style.width = `calc(${100 - percentage}% - 2px)`;
         };
 
         const onMouseUp = () => {
             document.documentElement.style.userSelect = '';
-            overlay.style.display = 'none';
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
         };
@@ -132,18 +106,26 @@
         document.addEventListener('mouseup', onMouseUp);
     });
 
-    function createIframe(left, width, container) {
-        const iframe = document.createElement('iframe');
-        iframe.style.width = width;
-        iframe.style.height = '100%';
-        iframe.style.border = 'none';
-        iframe.style.position = 'absolute';
-        iframe.style.top = '0';
-        iframe.style.left = left;
-        container.appendChild(iframe);
-        iframe.contentWindow.document.open();
-        iframe.contentWindow.document.close();
-        return iframe;
+    function createDiv(left, width, container) {
+        const div = document.createElement('div');
+        div.style.width = width;
+        div.style.height = '100%';
+        div.style.overflow = 'auto';
+        div.style.position = 'absolute';
+        div.style.top = '0';
+        div.style.left = left;
+        container.appendChild(div);
+        return div;
+    }
+
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
     }
 
 })();
