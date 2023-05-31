@@ -156,7 +156,7 @@
         color: #333;
     `;
 
-    function addToSidebar(text, e) {
+    function addToSidebar(text, e, insertAfter = null) {
         const snippet = document.createElement('div');
         snippet.textContent = text;
         snippet.style.cssText = snippetStyle;
@@ -183,9 +183,60 @@
             }
         });
 
-        sidebar.appendChild(snippet);
-        // sidebar 滚动到末尾
-        sidebar.scrollTop = sidebar.scrollHeight;
+        // 新增: 添加长按事件，插入新条目
+        snippet.addEventListener('mousedown', (event) => {
+            const insertTimeout = setTimeout(() => {
+                insertNewSnippet(snippet);
+            }, 1000); // 1000ms 长按时间
+
+            // 鼠标松开时清除定时器，避免误触发
+            snippet.addEventListener('mouseup', () => {
+                clearTimeout(insertTimeout);
+            });
+
+            snippet.addEventListener('mouseleave', () => {
+                clearTimeout(insertTimeout);
+            });
+        });
+
+        if (insertAfter) {
+            insertAfter.insertAdjacentElement('afterend', snippet);
+        } else {
+            sidebar.appendChild(snippet);
+            // sidebar 滚动到末尾
+            sidebar.scrollTop = sidebar.scrollHeight;
+        }
+    }
+
+    function insertNewSnippet(afterElement) {
+        const input = document.createElement('input');
+        input.style.width = '100%';
+        input.placeholder = 'Enter new text...';
+    
+        afterElement.insertAdjacentElement('afterend', input);
+        input.focus();
+    
+        // 失去焦点时，将输入框的值插入到侧边栏
+        const onBlur = () => {
+            if (input.value.trim()) {
+                addToSidebar(input.value.trim(), null, input);
+            }
+            input.remove();
+        };
+    
+        input.addEventListener('blur', onBlur);
+    
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+    
+                if (input.value.trim()) {
+                    addToSidebar(input.value.trim(), null, input);
+                }
+                input.removeEventListener('blur', onBlur); // 移除blur事件
+                input.remove();
+            }
+        });
     }
 
     // 处理取消选择的情况
