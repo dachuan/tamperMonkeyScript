@@ -216,6 +216,8 @@
         afterElement.insertAdjacentElement('afterend', input);
         input.focus();
     
+        let isComposing = false; // 新增: 添加一个标记来检查是否处于组合输入状态
+    
         // 失去焦点时，将输入框的值插入到侧边栏
         const onBlur = () => {
             if (input.value.trim()) {
@@ -226,8 +228,18 @@
     
         input.addEventListener('blur', onBlur);
     
+        // 新增: 监听compositionstart事件
+        input.addEventListener('compositionstart', () => {
+            isComposing = true;
+        });
+    
+        // 新增: 监听compositionend事件
+        input.addEventListener('compositionend', () => {
+            isComposing = false;
+        });
+    
         input.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
+            if (event.key === 'Enter' && !isComposing) { // 检查是否处于组合输入状态
                 event.preventDefault();
     
                 if (input.value.trim()) {
@@ -238,6 +250,7 @@
             }
         });
     }
+
 
     // 处理取消选择的情况
     function handleKeyDown(event) {
