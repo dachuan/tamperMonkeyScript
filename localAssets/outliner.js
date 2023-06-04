@@ -5,6 +5,7 @@
  * */
 
 function outliner() {
+    console.log('from module.');
 
   // Track the Shift key state
   let shiftKeyPressed = false;
@@ -90,13 +91,8 @@ function outliner() {
         nestedList.appendChild(currentNode);
         const newRange = document.createRange();
 
-        // Get the length of the previous text node and adjust the offset accordingly
-        const previousTextNode = nestedList.previousSibling;
-        const previousTextLength = previousTextNode.textContent.length;
-        const newOffset = range.startOffset - previousTextLength;
-
-        newRange.setStart(currentNode.firstChild, range.startOffset);
-        newRange.setEnd(currentNode.firstChild, range.endOffset);
+        newRange.setStart(currentNode.firstChild, 1);
+        newRange.setEnd(currentNode.firstChild, 1);
         sel.removeAllRanges();
         sel.addRange(newRange);
       }
@@ -122,6 +118,34 @@ function outliner() {
     }
   };
 
+  // Add fold method to the outlineEditor element
+  outlineEditor.fold = function(currentNode) {
+    if (currentNode.tagName === 'LI') {
+      const nestedList = currentNode.querySelector('ul');
+      if (nestedList) {
+        nestedList.style.display = 'none';
+        const textNode = currentNode.firstChild;
+        if (textNode.nodeType === Node.TEXT_NODE) {
+          textNode.textContent = '+ ' + textNode.textContent;
+        }
+      }
+    }
+  };
+
+  // Add unfold method to the outlineEditor element
+  outlineEditor.unfold = function(currentNode) {
+    if (currentNode.tagName === 'LI') {
+      const nestedList = currentNode.querySelector('ul');
+      if (nestedList) {
+        nestedList.style.display = 'block';
+        const textNode = currentNode.firstChild;
+        if (textNode.nodeType === Node.TEXT_NODE && textNode.textContent.startsWith('+ ')) {
+          textNode.textContent = textNode.textContent.substring(2);
+        }
+      }
+    }
+  };
+
    // Check if is chinese input ongoing
    let isComposing = false;
    function checkChineseInput(inputDom){
@@ -137,6 +161,44 @@ function outliner() {
         });
    }
   checkChineseInput(editorContainer);
+
+  // Add a dblclick event listener to toggle fold and unfold
+  outlineEditor.addEventListener('dblclick', (e) => {
+    const currentNode = e.target;
+    if (currentNode.tagName === 'LI') {
+      const nestedList = currentNode.querySelector('ul');
+      if (nestedList && nestedList.style.display !== 'none') {
+        outlineEditor.fold(currentNode);
+      } else {
+        outlineEditor.unfold(currentNode);
+      }
+    }
+  });
+
+  // Get the closest 'li' element from the given node
+  function getClosestLiElement(node) {
+    while (node && node.tagName !== 'LI') {
+      node = node.parentElement;
+    }
+    return node;
+  }
+
+  // Modify keydown event listener to use Selection API
+  outlineEditor.addEventListener('keydown', (e) => {
+    if (e.key === 'z' && e.ctrlKey) {
+      e.preventDefault();
+      const selection = window.getSelection();
+      const currentNode = getClosestLiElement(selection.anchorNode);
+      if (currentNode && currentNode.tagName === 'LI') {
+        const nestedList = currentNode.querySelector('ul');
+        if (nestedList && nestedList.style.display !== 'none') {
+          outlineEditor.fold(currentNode);
+        } else {
+          outlineEditor.unfold(currentNode);
+        }
+      }
+    }
+  });
 
   // Append the outline editor to the container
   editorContainer.appendChild(outlineEditor);
