@@ -5,7 +5,7 @@
  * */
 
 function outliner() {
-    console.log('from module.');
+    //console.log('from module.');
 
   // Track the Shift key state
   let shiftKeyPressed = false;
@@ -126,7 +126,7 @@ function outliner() {
         nestedList.style.display = 'none';
         const textNode = currentNode.firstChild;
         if (textNode.nodeType === Node.TEXT_NODE) {
-          textNode.textContent = '+ ' + textNode.textContent;
+          textNode.textContent = '...' + textNode.textContent;
         }
       }
     }
@@ -139,8 +139,8 @@ function outliner() {
       if (nestedList) {
         nestedList.style.display = 'block';
         const textNode = currentNode.firstChild;
-        if (textNode.nodeType === Node.TEXT_NODE && textNode.textContent.startsWith('+ ')) {
-          textNode.textContent = textNode.textContent.substring(2);
+        if (textNode.nodeType === Node.TEXT_NODE && textNode.textContent.startsWith('...')) {
+          textNode.textContent = textNode.textContent.substring(3);
         }
       }
     }
