@@ -73,6 +73,67 @@ function outliner() {
         }
     };
 
+    // 获得所有的文本
+    function processItems(items, indentLevel = 0) {
+        console.log('do process');
+        let result = '';
+      
+        items.forEach((item) => {
+            console.log(item);
+          // 添加当前层级的制表符
+          const indent = '\t'.repeat(indentLevel);
+      
+          // 获取当前 li 元素的直接文本内容，排除子级元素的文本
+          const itemText = Array.from(item.childNodes)
+            .filter(node => node.nodeType === Node.TEXT_NODE)
+            .map(node => node.textContent.trim())
+            .join('');
+
+
+            
+          // 拼接文本和缩进
+          result += `${indent}${itemText}\n`;
+
+            console.log('indent', indentLevel);
+            console.log('text', itemText);
+      
+          // 处理子级 li 元素，缩进层级加 1
+          const childItems = Array.from(item.children).filter(child => child.tagName === 'UL');
+          if (childItems.length > 0) {
+            result += processItems(Array.from(childItems[0].children), indentLevel + 1);
+          }
+        });
+      
+        return result;
+    }
+
+    outlineEditor.exportAllItems = function() {
+
+        //console.log('do export');
+
+        //const topLevelItems = outlineEditor.querySelectorAll('ul > li');
+        //const topLevelItems = outlineEditor.querySelectorAll(':scope > ul > li');
+        const topLevelItems = editorContainer.querySelectorAll(':scope > ul > li');
+        const itemsText = processItems(topLevelItems);
+        
+        //// 获取所有的 li 元素
+        //const items = outlineEditor.querySelectorAll('li');
+        //let itemsText = '';
+      
+        //items.forEach((item) => {
+        //  // 获取缩进层级
+        //  const indentLevel = item.getAttribute('data-indent') || 0;
+      
+        //  // 为每个层级添加一个制表符
+        //  const indent = '\t'.repeat(indentLevel);
+      
+        //  // 拼接文本和缩进
+        //  itemsText += `${indent}${item.textContent}\n`;
+        //});
+
+        return itemsText  
+    };
+
     // Add an indent method to the outlineEditor element
     outlineEditor.indent = function (currentNode, sel, range) {
         if (currentNode.tagName === 'LI') {
@@ -143,12 +204,10 @@ function outliner() {
     function checkChineseInput(inputDom) {
 
         inputDom.addEventListener('compositionstart', function () {
-            //console.log('Input method editor started composing.');
             isComposing = true;
         });
 
         inputDom.addEventListener('compositionend', function () {
-            //console.log('Input method editor finished composing.');
             isComposing = false;
         });
     }
@@ -174,6 +233,7 @@ function outliner() {
         }
         return node;
     }
+
 
     //------------------------------
     // 对于outlineEditor的一些事件侦听
@@ -222,7 +282,6 @@ function outliner() {
         if (selection.rangeCount > 0) {
             const currentNode = selection.getRangeAt(0).startContainer;
             outlineEditor.lastActiveNode = getClosestLiElement(currentNode);
-            //console.log('last active node is: ', outlineEditor.lastActiveNode);
         }
     });
 

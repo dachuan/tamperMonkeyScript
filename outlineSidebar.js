@@ -69,15 +69,20 @@
 
         var sidebarText = '';
 
-
         // add linkage
         sidebarText += linkage + '\n';
 
-        var sidebarItems = sidebar.querySelectorAll('.snippet');
-        for (var i = 0; i < sidebarItems.length; i++) {
-            // 缩进
-            sidebarText += `    ` + sidebarItems[i].textContent + '\n';
-        }
+        // add all items in outliner
+        var outlinerText = olEditor.outlineEditor.exportAllItems();
+        //console.log(outlinerText);
+        sidebarText += outlinerText;
+
+        //var sidebarItems = sidebar.querySelectorAll('.snippet');
+        //for (var i = 0; i < sidebarItems.length; i++) {
+        //    // 缩进
+        //    sidebarText += `    ` + sidebarItems[i].textContent + '\n';
+        //}
+
         navigator.clipboard.writeText(sidebarText);
         tipOfCopy();
     });
@@ -325,7 +330,7 @@
     }
 
     // ------------------------------
-    // back
+    // backup
     // ------------------------------
 
     // outliner编辑器引入
