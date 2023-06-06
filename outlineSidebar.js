@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Quotations sidebar
+// @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
 // @version      0.1.1
-// @description  diigo like sidebar for quotations
+// @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
 // @exclude      /^https://.*?126.com/*/
