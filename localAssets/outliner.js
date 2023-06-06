@@ -1,4 +1,8 @@
 /*
+ *  2023/6/6 上午11:47
+ *  ------------------------------
+ *  调整creatItem的传入参数
+ *
  *  2023/6/5 下午2:34
  *  ------------------------------
  *  增加焦点在outliner之外的创建item方法
@@ -51,9 +55,8 @@ function outliner() {
     // Add a lastActiveNode property to the outlineEditor element
     outlineEditor.lastActiveNode = null;
 
-
     // Add a createNewItem method to the outlineEditor element
-    outlineEditor.createNewItem = function (itemText) {
+    outlineEditor.createNewItem = function (itemText, itemClass='inner-item', itemDataSetIndex=Date.now()) {
         const sel = window.getSelection();
 
         // 如果outlineEditor不在focus
@@ -62,7 +65,11 @@ function outliner() {
 
         if (liNode && liNode.tagName === 'LI') {
             const newItem = document.createElement('li');
+
             newItem.textContent = '\u200B' + itemText; // Zero-width space
+            newItem.classList.add(itemClass);
+            newItem.dataset.index = itemDataSetIndex;
+
             liNode.parentNode.insertBefore(newItem, liNode.nextSibling);
             const newRange = document.createRange();
             newRange.setStart(newItem.firstChild, 1);
@@ -75,7 +82,7 @@ function outliner() {
 
     // 获得所有的文本
     function processItems(items, indentLevel = 0) {
-        console.log('do process');
+
         let result = '';
       
         items.forEach((item) => {
@@ -88,14 +95,9 @@ function outliner() {
             .filter(node => node.nodeType === Node.TEXT_NODE)
             .map(node => node.textContent.trim())
             .join('');
-
-
             
           // 拼接文本和缩进
           result += `${indent}${itemText}\n`;
-
-            console.log('indent', indentLevel);
-            console.log('text', itemText);
       
           // 处理子级 li 元素，缩进层级加 1
           const childItems = Array.from(item.children).filter(child => child.tagName === 'UL');
@@ -109,27 +111,8 @@ function outliner() {
 
     outlineEditor.exportAllItems = function() {
 
-        //console.log('do export');
-
-        //const topLevelItems = outlineEditor.querySelectorAll('ul > li');
-        //const topLevelItems = outlineEditor.querySelectorAll(':scope > ul > li');
         const topLevelItems = editorContainer.querySelectorAll(':scope > ul > li');
         const itemsText = processItems(topLevelItems);
-        
-        //// 获取所有的 li 元素
-        //const items = outlineEditor.querySelectorAll('li');
-        //let itemsText = '';
-      
-        //items.forEach((item) => {
-        //  // 获取缩进层级
-        //  const indentLevel = item.getAttribute('data-indent') || 0;
-      
-        //  // 为每个层级添加一个制表符
-        //  const indent = '\t'.repeat(indentLevel);
-      
-        //  // 拼接文本和缩进
-        //  itemsText += `${indent}${item.textContent}\n`;
-        //});
 
         return itemsText  
     };

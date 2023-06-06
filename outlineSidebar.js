@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Quotations sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.1.0
+// @version      0.1.1
 // @description  diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -13,6 +13,15 @@
 
 /*
  * 改造成outline
+ *  ------------------------------
+ *  2023/6/6 上午10:25
+ *  ------------------------------
+ *  完成了大纲导出
+ *  改进了初始不能收录高亮的问题
+ *  完成单击跳转到原文
+ *  todo:
+ *  - 样式调整
+ *
  *  ------------------------------
  *  2023/6/5 下午2:15
  *  ------------------------------
@@ -62,7 +71,6 @@
     `;
     // 点击title复制所有文本条目
     titleContainer.addEventListener('click', function(event) {
-
         var url = window.location.origin + window.location.pathname;
         var title = document.title;
         var linkage = `[${title}](${url})`;
@@ -74,14 +82,7 @@
 
         // add all items in outliner
         var outlinerText = olEditor.outlineEditor.exportAllItems();
-        //console.log(outlinerText);
         sidebarText += outlinerText;
-
-        //var sidebarItems = sidebar.querySelectorAll('.snippet');
-        //for (var i = 0; i < sidebarItems.length; i++) {
-        //    // 缩进
-        //    sidebarText += `    ` + sidebarItems[i].textContent + '\n';
-        //}
 
         navigator.clipboard.writeText(sidebarText);
         tipOfCopy();
@@ -92,7 +93,6 @@
 
     // copied 消息提示
     function tipOfCopy(){
-
         // 创建提示元素
         const tip = document.createElement('div');
         tip.textContent = 'All quotations copied.';
@@ -137,12 +137,26 @@
     `;
 
     // 添加点击事件监听器
+    // 初始化outliner的条目
     toggleSidebar.addEventListener('click', () => {
         toggleSidebar.style.backgroundColor = "#42bbf4";
         sidebar.style.opacity = (sidebar.style.opacity === '0' && runScript) ? '1' : '0';
         sidebar.style.zIndex = (sidebar.style.opacity === '0') ? '-9999' : '9999';
         toggleSidebar.textContent = (sidebar.style.opacity === '0') ? '+' : 'x';
         runScript = true;
+        // make the first item
+        const now = new Date();
+        const date = now.toLocaleDateString();
+        const time = now.toLocaleTimeString();
+        const startTime = `Date: ${date} Time: ${time}`;
+
+        if (olEditor.outlineEditor.children.length === 0) {
+            const emptyItem = document.createElement('li');
+            emptyItem.textContent = '\u200B'; // Zero-width space
+            olEditor.outlineEditor.appendChild(emptyItem);
+            olEditor.outlineEditor.lastActiveNode = emptyItem;
+            olEditor.outlineEditor.createNewItem(startTime);
+        }
     });
 
     document.body.appendChild(toggleSidebar);
@@ -150,41 +164,35 @@
     // 划词生成snippet，添加到outliner中
     document.addEventListener('mouseup', function (e) {
         const selectedText = window.getSelection().toString().trim();
+
         // 检测是否为sidebar中的文字
         // sidebar中的文字不做处理，避免重复添加
         const target = event.target;
 
         if (selectedText.length > 0 && !sidebar.contains(target) && runScript) {
-            //addToSidebar(selectedText, e);
-
-            highlightSelectedText();
+            // 文章中的高亮与outliner中item，保持一致的datasetIndex
+            const equalDataSetIndex = Date.now();
+            highlightSelectedText(equalDataSetIndex);
 
             // 创建一个新的snippet
             // 调用outliner自身的创建方法
-            //olEditor.outlineEditor.createNewItem("new");
-            olEditor.outlineEditor.createNewItem(selectedText);
+            olEditor.outlineEditor.createNewItem(selectedText, 'snippet', equalDataSetIndex);
+            // 侦听这个新建snippet的单击侦听
+            const newAddedSnippet = document.querySelector(`.snippet[data-index="${equalDataSetIndex}"]`);
+            newAddedSnippet.addEventListener('click', (e) => {
+                e.stopPropagation(); // 防止事件冒泡
+                //console.log(newAddedSnippet);
+                const highlighted = document.querySelector(`.highlighted[data-index="${newAddedSnippet.dataset.index}"]`);
+                if (highlighted) {
+                    //console.log(highlighted);
+                    highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
 
             // 清除选区，避免重复添加
             window.getSelection().removeAllRanges();
         }
     });
-    let snippetCount = 0;
-
-    // 划词生成snippet
-//    document.addEventListener('mouseup', function (e) {
-//        const selectedText = window.getSelection().toString().trim();
-//        // 检测是否为sidebar中的文字
-//        // sidebar中的文字不做处理，避免重复添加
-//        const target = event.target;
-//
-//        if (selectedText.length > 0 && !sidebar.contains(target) && runScript) {
-//            addToSidebar(selectedText, e);
-//            highlightSelectedText();
-//            // 清除选区，避免重复添加
-//            window.getSelection().removeAllRanges();
-//        }
-//    });
-//    let snippetCount = 0;
 
     // Define Diigo style for list items
     var snippetStyle = `
@@ -200,104 +208,6 @@
         color: #333;
     `;
 
-    // 添加snippet到sidebar的处理
-    function addToSidebar(text, e, insertAfter = null) {
-        const snippet = document.createElement('div');
-        snippet.textContent = text;
-        snippet.style.cssText = snippetStyle;
-        snippet.dataset.index = snippetCount;
-        snippet.classList.add('snippet');
-
-        snippetCount += 1;
-
-        // Animate adding text to the sidebar
-            var opacity = 0;
-            var interval = setInterval(function(){
-                opacity += 0.1;
-                snippet.style.opacity = opacity;
-                if(opacity >= 1){
-                    clearInterval(interval);
-                }
-            }, 50);
-
-        // 添加点击事件，跳转到原文位置
-        snippet.addEventListener('click', () => {
-            const highlighted = document.querySelector(`.highlighted[data-index="${snippet.dataset.index}"]`);
-            if (highlighted) {
-                highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        });
-
-        // 新增: 添加长按事件，插入新条目
-        snippet.addEventListener('mousedown', (event) => {
-            const insertTimeout = setTimeout(() => {
-                insertNewSnippet(snippet);
-            }, 1000); // 1000ms 长按时间
-
-            // 鼠标松开时清除定时器，避免误触发
-            snippet.addEventListener('mouseup', () => {
-                clearTimeout(insertTimeout);
-            });
-
-            snippet.addEventListener('mouseleave', () => {
-                clearTimeout(insertTimeout);
-            });
-        });
-
-        if (insertAfter) {
-            insertAfter.insertAdjacentElement('afterend', snippet);
-        } else {
-            sidebar.appendChild(snippet);
-            // sidebar 滚动到末尾
-            sidebar.scrollTop = sidebar.scrollHeight;
-        }
-    }
-
-    // 编辑新增加的snippet
-    function insertNewSnippet(afterElement) {
-        const input = document.createElement('input');
-        input.style.width = '100%';
-        input.placeholder = 'Enter new text...';
-    
-        afterElement.insertAdjacentElement('afterend', input);
-        input.focus();
-    
-        let isComposing = false; // 新增: 添加一个标记来检查是否处于组合输入状态
-    
-        // 失去焦点时，将输入框的值插入到侧边栏
-        const onBlur = () => {
-            if (input.value.trim()) {
-                addToSidebar(input.value.trim(), null, input);
-            }
-            input.remove();
-        };
-    
-        input.addEventListener('blur', onBlur);
-    
-        // 新增: 监听compositionstart事件
-        input.addEventListener('compositionstart', () => {
-            isComposing = true;
-        });
-    
-        // 新增: 监听compositionend事件
-        input.addEventListener('compositionend', () => {
-            isComposing = false;
-        });
-    
-        input.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' && !isComposing) { // 检查是否处于组合输入状态
-                event.preventDefault();
-    
-                if (input.value.trim()) {
-                    addToSidebar(input.value.trim(), null, input);
-                }
-                input.removeEventListener('blur', onBlur); // 移除blur事件
-                input.remove();
-            }
-        });
-    }
-
-
     // esc键处理取消选择的情况
     function handleKeyDown(event) {
         if (event.key === 'Escape') {
@@ -307,14 +217,14 @@
     document.addEventListener('keydown', handleKeyDown);
 
     // 高亮选区
-    function highlightSelectedText() {
+    function highlightSelectedText(equalDataSetIndex) {
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
             const range = selection.getRangeAt(0);
             const span = document.createElement('span');
             span.style.backgroundColor = 'yellow';
             span.className = 'highlighted';
-            span.dataset.index = snippetCount - 1;
+            span.dataset.index = equalDataSetIndex;
 
             // 通过先extract，再insert可以避免
             // Non-Text元素包裹的错误
@@ -576,4 +486,119 @@
         //  
         //    return editorContainer;
         //}
+    //
+    // 划词生成snippet
+        //document.addEventListener('mouseup', function (e) {
+        //    const selectedText = window.getSelection().toString().trim();
+        //    // 检测是否为sidebar中的文字
+        //    // sidebar中的文字不做处理，避免重复添加
+        //    const target = event.target;
+
+        //    if (selectedText.length > 0 && !sidebar.contains(target) && runScript) {
+        //        addToSidebar(selectedText, e);
+        //        highlightSelectedText();
+        //        // 清除选区，避免重复添加
+        //        window.getSelection().removeAllRanges();
+        //    }
+        //});
+        //let snippetCount = 0;
+        //
+    // 添加snippet到sidebar的处理
+        //function addToSidebar(text, e, insertAfter = null) {
+        //    const snippet = document.createElement('div');
+        //    snippet.textContent = text;
+        //    snippet.style.cssText = snippetStyle;
+        //    snippet.dataset.index = snippetCount;
+        //    snippet.classList.add('snippet');
+
+        //    snippetCount += 1;
+
+        //    // Animate adding text to the sidebar
+        //        var opacity = 0;
+        //        var interval = setInterval(function(){
+        //            opacity += 0.1;
+        //            snippet.style.opacity = opacity;
+        //            if(opacity >= 1){
+        //                clearInterval(interval);
+        //            }
+        //        }, 50);
+
+        //    // 添加点击事件，跳转到原文位置
+        //    snippet.addEventListener('click', () => {
+        //        const highlighted = document.querySelector(`.highlighted[data-index="${snippet.dataset.index}"]`);
+        //        if (highlighted) {
+        //            highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        //        }
+        //    });
+
+        //    // 新增: 添加长按事件，插入新条目
+        //    snippet.addEventListener('mousedown', (event) => {
+        //        const insertTimeout = setTimeout(() => {
+        //            insertNewSnippet(snippet);
+        //        }, 1000); // 1000ms 长按时间
+
+        //        // 鼠标松开时清除定时器，避免误触发
+        //        snippet.addEventListener('mouseup', () => {
+        //            clearTimeout(insertTimeout);
+        //        });
+
+        //        snippet.addEventListener('mouseleave', () => {
+        //            clearTimeout(insertTimeout);
+        //        });
+        //    });
+
+        //    if (insertAfter) {
+        //        insertAfter.insertAdjacentElement('afterend', snippet);
+        //    } else {
+        //        sidebar.appendChild(snippet);
+        //        // sidebar 滚动到末尾
+        //        sidebar.scrollTop = sidebar.scrollHeight;
+        //    }
+        //}
+
+    // 编辑新增加的snippet
+        //function insertNewSnippet(afterElement) {
+        //    const input = document.createElement('input');
+        //    input.style.width = '100%';
+        //    input.placeholder = 'Enter new text...';
+        //
+        //    afterElement.insertAdjacentElement('afterend', input);
+        //    input.focus();
+        //
+        //    let isComposing = false; // 新增: 添加一个标记来检查是否处于组合输入状态
+        //
+        //    // 失去焦点时，将输入框的值插入到侧边栏
+        //    const onBlur = () => {
+        //        if (input.value.trim()) {
+        //            addToSidebar(input.value.trim(), null, input);
+        //        }
+        //        input.remove();
+        //    };
+        //
+        //    input.addEventListener('blur', onBlur);
+        //
+        //    // 新增: 监听compositionstart事件
+        //    input.addEventListener('compositionstart', () => {
+        //        isComposing = true;
+        //    });
+        //
+        //    // 新增: 监听compositionend事件
+        //    input.addEventListener('compositionend', () => {
+        //        isComposing = false;
+        //    });
+        //
+        //    input.addEventListener('keydown', (event) => {
+        //        if (event.key === 'Enter' && !isComposing) { // 检查是否处于组合输入状态
+        //            event.preventDefault();
+        //
+        //            if (input.value.trim()) {
+        //                addToSidebar(input.value.trim(), null, input);
+        //            }
+        //            input.removeEventListener('blur', onBlur); // 移除blur事件
+        //            input.remove();
+        //        }
+        //    });
+        //}
+
+
 })();
