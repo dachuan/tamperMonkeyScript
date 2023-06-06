@@ -1,7 +1,7 @@
 /*
  *  2023/6/6 上午11:47
  *  ------------------------------
- *  调整creatItem的传入参数
+ *  调整createItem的传入参数
  *
  *  2023/6/5 下午2:34
  *  ------------------------------
@@ -288,7 +288,7 @@ function outliner() {
       }
     `;
     document.head.appendChild(nestedListStyle);
-
+2
     return editorContainer;
 }
 

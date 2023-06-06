@@ -20,7 +20,8 @@
  *  改进了初始不能收录高亮的问题
  *  完成单击跳转到原文
  *  todo:
- *  - 样式调整
+ *  - 样式调整 done
+ *  - 最上头的时间样式
  *
  *  ------------------------------
  *  2023/6/5 下午2:15
@@ -34,6 +35,22 @@
 (function() {
     'use strict';
 
+    // 创建一个 <style> 元素
+    const style = document.createElement('style');
+    style.type = 'text/css';
+
+    // 设置 CSS 规则
+    style.innerHTML = `
+        .inner-item {
+            font-size: 12px;
+            font-weight: normal;
+            opacity: 100;
+            color: #333;
+        }
+    `;
+
+    // 将 <style> 元素添加到页面的 <head> 中
+    document.head.appendChild(style);
 
     const olEditor = outliner();
 
@@ -144,6 +161,7 @@
         sidebar.style.zIndex = (sidebar.style.opacity === '0') ? '-9999' : '9999';
         toggleSidebar.textContent = (sidebar.style.opacity === '0') ? '+' : 'x';
         runScript = true;
+
         // make the first item
         const now = new Date();
         const date = now.toLocaleDateString();
@@ -152,10 +170,9 @@
 
         if (olEditor.outlineEditor.children.length === 0) {
             const emptyItem = document.createElement('li');
-            emptyItem.textContent = '\u200B'; // Zero-width space
+            emptyItem.textContent = '\u200B' + startTime; // Zero-width space
             olEditor.outlineEditor.appendChild(emptyItem);
             olEditor.outlineEditor.lastActiveNode = emptyItem;
-            olEditor.outlineEditor.createNewItem(startTime);
         }
     });
 
@@ -179,6 +196,8 @@
             olEditor.outlineEditor.createNewItem(selectedText, 'snippet', equalDataSetIndex);
             // 侦听这个新建snippet的单击侦听
             const newAddedSnippet = document.querySelector(`.snippet[data-index="${equalDataSetIndex}"]`);
+            newAddedSnippet.style.cssText = snippetStyle;
+
             newAddedSnippet.addEventListener('click', (e) => {
                 e.stopPropagation(); // 防止事件冒泡
                 //console.log(newAddedSnippet);
@@ -191,6 +210,8 @@
 
             // 清除选区，避免重复添加
             window.getSelection().removeAllRanges();
+            // 滚动到最后
+            sidebar.scrollTop = sidebar.scrollHeight;
         }
     });
 
@@ -204,7 +225,7 @@
         box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
         font-size: 12px;
         font-weight: normal;
-        opacity: 0;
+        opacity: 100;
         color: #333;
     `;
 
