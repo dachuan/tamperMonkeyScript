@@ -1,4 +1,12 @@
 /*
+ *  2023/6/8 下午12:37
+ *  ------------------------------
+ *  调整on blur时的lastActiveNode
+ *  设置为outliner最后一个直接的子级li
+ *
+ *  新的appendNewItem方法
+ *  只对外部使用，避免选取的问题
+ *
  *  2023/6/6 上午11:47
  *  ------------------------------
  *  调整createItem的传入参数
@@ -34,6 +42,7 @@ function outliner() {
 
     // Create the outline editor container
     const editorContainer = document.createElement('div');
+    editorContainer.classList.add('outliner-container');
 
     // Create the outline editor
     const outlineEditor = document.createElement('ul');
@@ -56,12 +65,17 @@ function outliner() {
     outlineEditor.lastActiveNode = null;
 
     // Add a createNewItem method to the outlineEditor element
+    // to be used in outliner edit inside
+    // 此处代码有冗余，todo
     outlineEditor.createNewItem = function (itemText, itemClass='inner-item', itemDataSetIndex=Date.now()) {
         const sel = window.getSelection();
 
         // 如果outlineEditor不在focus
         // 则取lastActiveNode
+        //console.log("1 last active node is: ",outlineEditor.lastActiveNode);
+
         const liNode = document.activeElement === outlineEditor ? getClosestLiElement(sel.getRangeAt(0).startContainer) : outlineEditor.lastActiveNode;
+
 
         if (liNode && liNode.tagName === 'LI') {
             const newItem = document.createElement('li');
@@ -77,6 +91,27 @@ function outliner() {
             sel.removeAllRanges();
             sel.addRange(newRange);
             outlineEditor.lastActiveNode = newItem; // 更新lastActiveNode
+            //console.log("2 last active node is: ",outlineEditor.lastActiveNode);
+        }
+    };
+
+    // append newItem method to the outlineEditor element
+    // to be used outside 
+    outlineEditor.appendNewItem = function (itemText, itemClass='snippet', itemDataSetIndex) {
+
+        outlineEditor.setLastActiveNode();
+        const liNode = outlineEditor.lastActiveNode;
+        console.log("li node in outliner is: ",liNode);
+
+        if (liNode && liNode.tagName === 'LI') {
+            const newItem = document.createElement('li');
+
+            newItem.textContent = '\u200B' + itemText; // Zero-width space
+            newItem.classList.add(itemClass);
+            newItem.dataset.index = itemDataSetIndex;
+
+            liNode.parentNode.insertBefore(newItem, liNode.nextSibling);
+            outlineEditor.lastActiveNode = newItem; // 更新lastActiveNode
         }
     };
 
@@ -86,7 +121,6 @@ function outliner() {
         let result = '';
       
         items.forEach((item) => {
-            console.log(item);
           // 添加当前层级的制表符
           const indent = '\t'.repeat(indentLevel);
       
@@ -217,6 +251,15 @@ function outliner() {
         return node;
     }
 
+    // 设置默认的最后一个active node
+    outlineEditor.setLastActiveNode = function(){
+        const elements = outlineEditor.querySelectorAll(':scope > li');
+        //console.log('from outliner, outlineEditor.querySelectorAll', outlineEditor);
+        const lastElement = elements[elements.length - 1];
+        outlineEditor.lastActiveNode = lastElement;
+        //console.log('from outliner, last node is: ', outlineEditor.lastActiveNode);
+    }
+
 
     //------------------------------
     // 对于outlineEditor的一些事件侦听
@@ -260,12 +303,9 @@ function outliner() {
     });
 
     // Add a blur event listener to outlineEditor to store the last active li node
+    // make the last li in outliner
     outlineEditor.addEventListener('blur', (e) => {
-        const selection = window.getSelection();
-        if (selection.rangeCount > 0) {
-            const currentNode = selection.getRangeAt(0).startContainer;
-            outlineEditor.lastActiveNode = getClosestLiElement(currentNode);
-        }
+        outlineEditor.setLastActiveNode();
     });
 
     // Append the outline editor to the container

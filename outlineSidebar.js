@@ -1,18 +1,23 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
+// @version      0.1.2
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
 // @exclude      /^https://.*?126.com/*/
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=workflowy.com
 // @require      file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/localAssets/outliner.js
 // @grant        none
 // ==/UserScript==
 
 /*
  * 改造成outline
+ *  ------------------------------
+ *  2023/6/8 下午2:26
+ *  ------------------------------
+ *  应用新的创建snippet的方法
+ *
  *  ------------------------------
  *  2023/6/6 上午10:25
  *  ------------------------------
@@ -34,6 +39,8 @@
 
 (function() {
     'use strict';
+
+    console.log('from outliner');
 
     // 创建一个 <style> 元素
     const style = document.createElement('style');
@@ -169,10 +176,10 @@
         const startTime = `Date: ${date} Time: ${time}`;
 
         if (olEditor.outlineEditor.children.length === 0) {
-            const emptyItem = document.createElement('li');
-            emptyItem.textContent = '\u200B' + startTime; // Zero-width space
-            olEditor.outlineEditor.appendChild(emptyItem);
-            olEditor.outlineEditor.lastActiveNode = emptyItem;
+            const startItem = document.createElement('li');
+            startItem.textContent = '\u200B' + startTime; // Zero-width space
+            olEditor.outlineEditor.appendChild(startItem);
+            olEditor.outlineEditor.lastActiveNode = startItem;
         }
     });
 
@@ -193,17 +200,17 @@
 
             // 创建一个新的snippet
             // 调用outliner自身的创建方法
-            olEditor.outlineEditor.createNewItem(selectedText, 'snippet', equalDataSetIndex);
+            olEditor.outlineEditor.appendNewItem(selectedText, 'snippet', equalDataSetIndex);
+            //console.log('add snippet to outline');
+
             // 侦听这个新建snippet的单击侦听
             const newAddedSnippet = document.querySelector(`.snippet[data-index="${equalDataSetIndex}"]`);
             newAddedSnippet.style.cssText = snippetStyle;
 
             newAddedSnippet.addEventListener('click', (e) => {
                 e.stopPropagation(); // 防止事件冒泡
-                //console.log(newAddedSnippet);
                 const highlighted = document.querySelector(`.highlighted[data-index="${newAddedSnippet.dataset.index}"]`);
                 if (highlighted) {
-                    //console.log(highlighted);
                     highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             });
@@ -234,7 +241,26 @@
         if (event.key === 'Escape') {
             window.getSelection().removeAllRanges();
         }
-    }
+
+        // tmp
+        if (event.key === 'l') {
+            event.preventDefault();
+            //console.log("olEditor: ", olEditor);
+            console.log('loading');
+            olEditor.outlineEditor.innerHTML = `
+<li>​Date: 2023/6/8 Time: 14:06:04</li><li class="snippet" data-index="1686204368515" style="list-style-type: none; padding: 10px 5px; margin: 10px; border-left: 3px solid rgb(254, 185, 44); background-color: rgb(245, 245, 245); box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 3px; font-size: 12px; font-weight: normal; opacity: 100; color: rgb(51, 51, 51);">​李石和秦再</li> `;
+            const elements = olEditor.outlineEditor.querySelectorAll(':scope > li');
+            const lastElement = elements[elements.length - 1];
+            olEditor.outlineEditor.lastActiveNode = lastElement;
+        }
+
+        //tmp for set last active node
+        if (event.key === 'q') {
+            event.preventDefault();
+            //console.log("olEditor: ", olEditor);
+            console.log('setting last node');
+
+        }
     document.addEventListener('keydown', handleKeyDown);
 
     // 高亮选区
