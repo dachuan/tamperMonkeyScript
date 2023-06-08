@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.1.2
+// @version      0.2.0
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -17,6 +17,8 @@
  *  2023/6/8 下午2:26
  *  ------------------------------
  *  应用新的创建snippet的方法
+ *  整合存储模块
+ *  [x]调整webstorage的outliner重构方法
  *
  *  ------------------------------
  *  2023/6/6 上午10:25
@@ -40,7 +42,7 @@
 (function() {
     'use strict';
 
-    console.log('from outliner');
+    console.log('from outliner!data restore.');
 
     // 创建一个 <style> 元素
     const style = document.createElement('style');
@@ -54,12 +56,27 @@
             opacity: 100;
             color: #333;
         }
+
+        .snippet {
+            list-style-type: none;
+            padding: 10px 5px;
+            margin: 10px 10px;
+            border-left: 3px solid #feb92c;
+            background-color: #F5F5F5;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+            font-weight: normal;
+            opacity: 100;
+            color: #333;
+        }
     `;
 
     // 将 <style> 元素添加到页面的 <head> 中
     document.head.appendChild(style);
 
+    // 初始化outliner，存储数据
     const olEditor = outliner();
+    const webStorage = annotationStorage();
 
     // 脚本开关
     let runScript = false;
@@ -93,7 +110,9 @@
         font-weight: bold;
         background-color: #42bbf4;
     `;
+
     // 点击title复制所有文本条目
+    // 同时将数据保存到local storage
     titleContainer.addEventListener('click', function(event) {
         var url = window.location.origin + window.location.pathname;
         var title = document.title;
@@ -110,6 +129,9 @@
 
         navigator.clipboard.writeText(sidebarText);
         tipOfCopy();
+
+        // 保存页面数据
+        webStorage.saveAllAnnotations();
     });
 
     sidebar.appendChild(titleContainer);
@@ -138,7 +160,6 @@
         }, 1000);
     }
 
-
     // 添加侧边栏到页面
     document.body.appendChild(sidebar);
 
@@ -162,6 +183,7 @@
 
     // 添加点击事件监听器
     // 初始化outliner的条目
+    // 读取存储数据
     toggleSidebar.addEventListener('click', () => {
         toggleSidebar.style.backgroundColor = "#42bbf4";
         sidebar.style.opacity = (sidebar.style.opacity === '0' && runScript) ? '1' : '0';
@@ -177,9 +199,14 @@
 
         if (olEditor.outlineEditor.children.length === 0) {
             const startItem = document.createElement('li');
+            startItem.classList.add('starter');
             startItem.textContent = '\u200B' + startTime; // Zero-width space
             olEditor.outlineEditor.appendChild(startItem);
             olEditor.outlineEditor.lastActiveNode = startItem;
+
+            // 读取存储数据
+            // 进行页面重构
+            webStorage.applyAllData();
         }
     });
 
@@ -242,25 +269,12 @@
             window.getSelection().removeAllRanges();
         }
 
-        // tmp
-        if (event.key === 'l') {
-            event.preventDefault();
-            //console.log("olEditor: ", olEditor);
-            console.log('loading');
-            olEditor.outlineEditor.innerHTML = `
-<li>​Date: 2023/6/8 Time: 14:06:04</li><li class="snippet" data-index="1686204368515" style="list-style-type: none; padding: 10px 5px; margin: 10px; border-left: 3px solid rgb(254, 185, 44); background-color: rgb(245, 245, 245); box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 3px; font-size: 12px; font-weight: normal; opacity: 100; color: rgb(51, 51, 51);">​李石和秦再</li> `;
-            const elements = olEditor.outlineEditor.querySelectorAll(':scope > li');
-            const lastElement = elements[elements.length - 1];
-            olEditor.outlineEditor.lastActiveNode = lastElement;
-        }
-
-        //tmp for set last active node
+        //tmp for trace the restore
         if (event.key === 'q') {
             event.preventDefault();
-            //console.log("olEditor: ", olEditor);
-            console.log('setting last node');
-
+            console.log("outlineEditor is : ", olEditor.outlineEditor);
         }
+    }
     document.addEventListener('keydown', handleKeyDown);
 
     // 高亮选区
@@ -286,366 +300,131 @@
         }
     }
 
+
+    // 数据存储于local storage
+    function annotationStorage() {
+        //console.log('storage pra');
+        //
+        const webStorage = {};
+      
+        const savedHighlightData = localStorage.getItem('tampermonkeyHighlightedText');
+        const savedOutlinerData = localStorage.getItem('outlinerData');
+        console.log(savedOutlinerData);
+      
+        // 重新恢复页面
+        // 包含outliner与页面高亮
+        webStorage.applyAllData = function() {
+            console.log('loading data...');
+
+            // 读取，并重新高亮
+            if (savedHighlightData) {
+                const parsedData = JSON.parse(savedHighlightData);
+                parsedData.forEach((entry) => {
+                  applyHighlight(entry);
+                });
+                console.log('apply all highlighted.');
+            }
+
+            // 读取，并重新形成outliner
+            olEditor.outlineEditor.restoreData();
+            // 遍历所有snippet，增加跳转到原文高亮的侦听
+            const snippets = Array.from(olEditor.outlineEditor.querySelectorAll('li')).filter(item => item.classList.contains('snippet'));
+            snippets.forEach(snippet => {
+                snippet.addEventListener('click', (e) => {
+                    console.log("clicked");
+                    e.stopPropagation(); // 防止事件冒泡
+                    const highlighted = document.querySelector(`.highlighted[data-index="${snippet.dataset.index}"]`);
+                    if (highlighted) {
+                        highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                });
+            });
+            console.log('apply outliner.');
+        }
+      
+        // 存储数据
+        webStorage.saveAllAnnotations = function() {
+            const highlightedSpans = document.querySelectorAll('.highlighted');
+            const data = Array.from(highlightedSpans).map((span) => {
+              return {
+                xpath: getXPath(span.parentNode),
+                text: span.textContent,
+                dataset_index: span.dataset.index
+              };
+            });
+            localStorage.setItem('tampermonkeyHighlightedText', JSON.stringify(data));
+            console.log('highlighted saved.');
+
+            // 调用outliner中的数据保存方法
+            olEditor.outlineEditor.saveData();
+            console.log('outliner saved');
+      
+        }
+      
+        function getXPath(element) {
+            if (element.id !== '') {
+              return 'id("' + element.id + '")';
+            }
+            if (element === document.body) {
+              return element.tagName.toLowerCase();
+            }
+      
+            let siblingIndex = 1;
+            let sibling = element;
+            while ((sibling = sibling.previousElementSibling)) {
+              siblingIndex++;
+            }
+      
+            return (
+              getXPath(element.parentNode) +
+              '/' +
+              element.tagName.toLowerCase() +
+              '[' +
+              siblingIndex +
+              ']'
+            );
+        }
+      
+        function applyHighlight(entry) {
+            const parent = document.evaluate(
+              entry.xpath,
+              document,
+              null,
+              XPathResult.FIRST_ORDERED_NODE_TYPE,
+              null
+            ).singleNodeValue;
+            if (!parent) return;
+      
+            const textNodeIndex = Array.from(parent.childNodes).findIndex(
+              (node) => node.nodeType === Node.TEXT_NODE && node.textContent.includes(entry.text)
+            );
+            if (textNodeIndex === -1) return;
+      
+            const textNode = parent.childNodes[textNodeIndex];
+            const highlightedSpan = document.createElement('span');
+            highlightedSpan.className = 'highlighted';
+            highlightedSpan.style.backgroundColor = 'yellow';
+            highlightedSpan.textContent = entry.text;
+            highlightedSpan.dataset.index = entry.dataset_index;
+      
+            const text = textNode.textContent;
+            const textBefore = text.substring(0, text.indexOf(entry.text));
+            const textAfter = text.substring(textBefore.length + entry.text.length);
+      
+            if (textBefore) {
+              parent.insertBefore(document.createTextNode(textBefore), textNode);
+            }
+            parent.insertBefore(highlightedSpan, textNode);
+            if (textAfter) {
+              parent.insertBefore(document.createTextNode(textAfter), textNode);
+            }
+            parent.removeChild(textNode);
+        }
+      
+        return webStorage
+    }
+
     // ------------------------------
     // backup
     // ------------------------------
-
-    // outliner编辑器引入
-    // 暂时通过require
-        //function outliner() {
-        //    //console.log('from module.');
-        //  
-        //    // Track the Shift key state
-        //    let shiftKeyPressed = false;
-        //  
-        //    // Add keydown event listener to track Shift key state
-        //    document.addEventListener('keydown', (e) => {
-        //        if (e.key === 'Shift') {
-        //          shiftKeyPressed = true;
-        //        }
-        //    });
-        //  
-        //    // Add keyup event listener to track Shift key state
-        //    document.addEventListener('keyup', (e) => {
-        //        if (e.key === 'Shift') {
-        //          shiftKeyPressed = false;
-        //        }
-        //    });
-        //  
-        //    // Create the outline editor container
-        //    const editorContainer = document.createElement('div');
-        //  
-        //    // Create the outline editor
-        //    const outlineEditor = document.createElement('ul');
-        //    outlineEditor.contentEditable = 'true';
-        //    outlineEditor.style.margin = '10px';
-        //    outlineEditor.style.height = 'calc(100% - 20px)';
-        //    outlineEditor.style.overflow = 'auto';
-        //    outlineEditor.style.paddingLeft = '0px'; // Remove padding for the main list
-        //  
-        //    // Add an empty list item when the editor is focused
-        //    outlineEditor.addEventListener('focus', () => {
-        //        if (outlineEditor.children.length === 0) {
-        //          const emptyItem = document.createElement('li');
-        //          emptyItem.textContent = '\u200B'; // Zero-width space
-        //          outlineEditor.appendChild(emptyItem);
-        //        }
-        //    });
-
-        //    // Add a lastActiveNode property to the outlineEditor element
-        //    outlineEditor.lastActiveNode = null;
-        //  
-        //  
-        //    // Add a createNewItem method to the outlineEditor element
-        //    outlineEditor.createNewItem = function(itemText) {
-        //        const sel = window.getSelection();
-
-        //        // 如果outlineEditor不在focus
-        //        // 则取lastActiveNode
-        //        const liNode = document.activeElement === outlineEditor ? getClosestLiElement(sel.getRangeAt(0).startContainer) : outlineEditor.lastActiveNode;
-
-        //        if (liNode && liNode.tagName === 'LI') {
-        //            const newItem = document.createElement('li');
-        //            newItem.textContent = '\u200B'+itemText; // Zero-width space
-        //            liNode.parentNode.insertBefore(newItem, liNode.nextSibling);
-        //            const newRange = document.createRange();
-        //            newRange.setStart(newItem.firstChild, 1);
-        //            newRange.setEnd(newItem.firstChild, 1);
-        //            sel.removeAllRanges();
-        //            sel.addRange(newRange);
-        //            outlineEditor.lastActiveNode = newItem; // 更新lastActiveNode
-        //        }
-        //    };
-        //  
-        //    // Add an indent method to the outlineEditor element
-        //    outlineEditor.indent = function(currentNode, sel, range) {
-        //        if (currentNode.tagName === 'LI') {
-        //            const previousItem = currentNode.previousElementSibling;
-        //            if (previousItem) {
-        //                const nestedList = previousItem.querySelector('ul') || document.createElement('ul');
-        //                previousItem.appendChild(nestedList);
-        //                nestedList.appendChild(currentNode);
-        //                const newRange = document.createRange();
-        //  
-        //                newRange.setStart(currentNode.firstChild, 1);
-        //                newRange.setEnd(currentNode.firstChild, 1);
-        //                sel.removeAllRanges();
-        //                sel.addRange(newRange);
-        //            }
-        //        }
-        //    };
-        //  
-        //    // Add an outdent method to the outlineEditor element
-        //    outlineEditor.outdent = function(currentNode, sel, range) {
-        //        if (currentNode.tagName === 'LI') {
-        //            const parentList = currentNode.parentNode;
-        //            if (parentList !== outlineEditor) {
-        //                const grandParentList = parentList.parentNode;
-        //                grandParentList.parentNode.insertBefore(currentNode, parentList.nextSibling);
-        //                if (parentList.children.length === 0) {
-        //                    grandParentList.removeChild(parentList);
-        //                }
-        //                const newRange = document.createRange();
-        //                newRange.setStart(currentNode.firstChild, range.startOffset);
-        //                newRange.setEnd(currentNode.firstChild, range.endOffset);
-        //                sel.removeAllRanges();
-        //                sel.addRange(newRange);
-        //            }
-        //        }
-        //    };
-        //  
-        //    // Add fold method to the outlineEditor element
-        //    outlineEditor.fold = function(currentNode) {
-        //        if (currentNode.tagName === 'LI') {
-        //            const nestedList = currentNode.querySelector('ul');
-        //            if (nestedList) {
-        //                nestedList.style.display = 'none';
-        //                const textNode = currentNode.firstChild;
-        //                if (textNode.nodeType === Node.TEXT_NODE) {
-        //                    textNode.textContent = '...' + textNode.textContent;
-        //                }
-        //            }
-        //        }
-        //    };
-        //  
-        //    // Add unfold method to the outlineEditor element
-        //    outlineEditor.unfold = function(currentNode) {
-        //        if (currentNode.tagName === 'LI') {
-        //          const nestedList = currentNode.querySelector('ul');
-        //          if (nestedList) {
-        //              nestedList.style.display = 'block';
-        //              const textNode = currentNode.firstChild;
-        //              if (textNode.nodeType === Node.TEXT_NODE && textNode.textContent.startsWith('...')) {
-        //                  textNode.textContent = textNode.textContent.substring(3);
-        //              }
-        //          }
-        //        }
-        //    };
-        //  
-        //     // Check if is chinese input ongoing
-        //     let isComposing = false;
-        //     function checkChineseInput(inputDom){
-        //  
-        //          inputDom.addEventListener('compositionstart', function() {
-        //              //console.log('Input method editor started composing.');
-        //              isComposing = true;
-        //          });
-        //          
-        //          inputDom.addEventListener('compositionend', function() {
-        //              //console.log('Input method editor finished composing.');
-        //              isComposing = false;
-        //          });
-        //     }
-        //    checkChineseInput(editorContainer);
-        //  
-        //    // Add a dblclick event listener to toggle fold and unfold
-        //    outlineEditor.addEventListener('dblclick', (e) => {
-        //        const currentNode = e.target;
-        //        if (currentNode.tagName === 'LI') {
-        //            const nestedList = currentNode.querySelector('ul');
-        //            if (nestedList && nestedList.style.display !== 'none') {
-        //                outlineEditor.fold(currentNode);
-        //            } else {
-        //                outlineEditor.unfold(currentNode);
-        //            }
-        //        }
-        //    });
-        //  
-        //    // Get the closest 'li' element from the given node
-        //    function getClosestLiElement(node) {
-        //      while (node && node.tagName !== 'LI') {
-        //        node = node.parentElement;
-        //      }
-        //      return node;
-        //    }
-
-        //    //------------------------------
-        //    // 对于outlineEditor的一些事件侦听
-        //    //------------------------------
-        //  
-        //    // Handle keyboard events for indent, outdent, and new items
-        //    outlineEditor.addEventListener('keydown', (e) => {
-        //        const sel = window.getSelection();
-        //        const range = sel.getRangeAt(0);
-        //        const currentNode = range.startContainer.parentNode;
-        //  
-        //        if (e.key === 'Tab') {
-        //          e.preventDefault();
-        //          if (shiftKeyPressed) { // Outdent when Shift key is pressed
-        //            outlineEditor.outdent(currentNode, sel, range);
-        //          } else { // Indent when Shift key is not pressed
-        //            outlineEditor.indent(currentNode, sel, range);
-        //          }
-        //        } else if (e.key === 'Enter' && !isComposing) { // Add a new list item on Enter key press
-        //          // isComposing is a tag to check if chinese input is going
-        //          e.preventDefault();
-        //          outlineEditor.createNewItem("");
-        //        }
-        //    });
-
-        //    // Modify keydown event listener to use Selection API
-        //    outlineEditor.addEventListener('keydown', (e) => {
-        //      if (e.key === 'z' && e.ctrlKey) {
-        //        e.preventDefault();
-        //        const selection = window.getSelection();
-        //        const currentNode = getClosestLiElement(selection.anchorNode);
-        //        if (currentNode && currentNode.tagName === 'LI') {
-        //          const nestedList = currentNode.querySelector('ul');
-        //          if (nestedList && nestedList.style.display !== 'none') {
-        //            outlineEditor.fold(currentNode);
-        //          } else {
-        //            outlineEditor.unfold(currentNode);
-        //          }
-        //        }
-        //      }
-        //    });
-
-        //      // Add a blur event listener to outlineEditor to store the last active li node
-        //      outlineEditor.addEventListener('blur', (e) => {
-        //        const selection = window.getSelection();
-        //        if (selection.rangeCount > 0) {
-        //          const currentNode = selection.getRangeAt(0).startContainer;
-        //          outlineEditor.lastActiveNode = getClosestLiElement(currentNode);
-        //            //console.log('last active node is: ', outlineEditor.lastActiveNode);
-        //        }
-        //      });
-        //  
-        //    // Append the outline editor to the container
-        //    editorContainer.appendChild(outlineEditor);
-        //  
-        //    // Add the outlineEditor element as a property of the editorContainer element
-        //    editorContainer.outlineEditor = outlineEditor;
-        //  
-        //    // Apply the 2-space indent to all nested lists
-        //    const nestedListStyle = document.createElement('style');
-        //    nestedListStyle.innerHTML = `
-        //      ul ul {
-        //        padding-left: 1ch;
-        //      }
-        //      ul {
-        //        list-style-position: inside; // Adjust the position of li::marker to inside
-        //      }
-        //      li {
-        //        padding-left: 1px; // Add left padding to display the input cursor
-        //      }
-        //    `;
-        //    document.head.appendChild(nestedListStyle);
-        //  
-        //    return editorContainer;
-        //}
-    //
-    // 划词生成snippet
-        //document.addEventListener('mouseup', function (e) {
-        //    const selectedText = window.getSelection().toString().trim();
-        //    // 检测是否为sidebar中的文字
-        //    // sidebar中的文字不做处理，避免重复添加
-        //    const target = event.target;
-
-        //    if (selectedText.length > 0 && !sidebar.contains(target) && runScript) {
-        //        addToSidebar(selectedText, e);
-        //        highlightSelectedText();
-        //        // 清除选区，避免重复添加
-        //        window.getSelection().removeAllRanges();
-        //    }
-        //});
-        //let snippetCount = 0;
-        //
-    // 添加snippet到sidebar的处理
-        //function addToSidebar(text, e, insertAfter = null) {
-        //    const snippet = document.createElement('div');
-        //    snippet.textContent = text;
-        //    snippet.style.cssText = snippetStyle;
-        //    snippet.dataset.index = snippetCount;
-        //    snippet.classList.add('snippet');
-
-        //    snippetCount += 1;
-
-        //    // Animate adding text to the sidebar
-        //        var opacity = 0;
-        //        var interval = setInterval(function(){
-        //            opacity += 0.1;
-        //            snippet.style.opacity = opacity;
-        //            if(opacity >= 1){
-        //                clearInterval(interval);
-        //            }
-        //        }, 50);
-
-        //    // 添加点击事件，跳转到原文位置
-        //    snippet.addEventListener('click', () => {
-        //        const highlighted = document.querySelector(`.highlighted[data-index="${snippet.dataset.index}"]`);
-        //        if (highlighted) {
-        //            highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        //        }
-        //    });
-
-        //    // 新增: 添加长按事件，插入新条目
-        //    snippet.addEventListener('mousedown', (event) => {
-        //        const insertTimeout = setTimeout(() => {
-        //            insertNewSnippet(snippet);
-        //        }, 1000); // 1000ms 长按时间
-
-        //        // 鼠标松开时清除定时器，避免误触发
-        //        snippet.addEventListener('mouseup', () => {
-        //            clearTimeout(insertTimeout);
-        //        });
-
-        //        snippet.addEventListener('mouseleave', () => {
-        //            clearTimeout(insertTimeout);
-        //        });
-        //    });
-
-        //    if (insertAfter) {
-        //        insertAfter.insertAdjacentElement('afterend', snippet);
-        //    } else {
-        //        sidebar.appendChild(snippet);
-        //        // sidebar 滚动到末尾
-        //        sidebar.scrollTop = sidebar.scrollHeight;
-        //    }
-        //}
-
-    // 编辑新增加的snippet
-        //function insertNewSnippet(afterElement) {
-        //    const input = document.createElement('input');
-        //    input.style.width = '100%';
-        //    input.placeholder = 'Enter new text...';
-        //
-        //    afterElement.insertAdjacentElement('afterend', input);
-        //    input.focus();
-        //
-        //    let isComposing = false; // 新增: 添加一个标记来检查是否处于组合输入状态
-        //
-        //    // 失去焦点时，将输入框的值插入到侧边栏
-        //    const onBlur = () => {
-        //        if (input.value.trim()) {
-        //            addToSidebar(input.value.trim(), null, input);
-        //        }
-        //        input.remove();
-        //    };
-        //
-        //    input.addEventListener('blur', onBlur);
-        //
-        //    // 新增: 监听compositionstart事件
-        //    input.addEventListener('compositionstart', () => {
-        //        isComposing = true;
-        //    });
-        //
-        //    // 新增: 监听compositionend事件
-        //    input.addEventListener('compositionend', () => {
-        //        isComposing = false;
-        //    });
-        //
-        //    input.addEventListener('keydown', (event) => {
-        //        if (event.key === 'Enter' && !isComposing) { // 检查是否处于组合输入状态
-        //            event.preventDefault();
-        //
-        //            if (input.value.trim()) {
-        //                addToSidebar(input.value.trim(), null, input);
-        //            }
-        //            input.removeEventListener('blur', onBlur); // 移除blur事件
-        //            input.remove();
-        //        }
-        //    });
-        //}
-
-
 })();

@@ -1,4 +1,9 @@
 /*
+ *  2023/6/8 下午9:40
+ *  ------------------------------
+ *  增加数据存储到local storage的方法
+ *  增加数据重置outliner的方法
+ *
  *  2023/6/8 下午12:37
  *  ------------------------------
  *  调整on blur时的lastActiveNode
@@ -21,7 +26,7 @@
  * */
 
 function outliner() {
-    console.log('from module.');
+    console.log('!from module.Save data.');
 
     // Track the Shift key state
     let shiftKeyPressed = false;
@@ -98,10 +103,9 @@ function outliner() {
     // append newItem method to the outlineEditor element
     // to be used outside 
     outlineEditor.appendNewItem = function (itemText, itemClass='snippet', itemDataSetIndex) {
-
         outlineEditor.setLastActiveNode();
         const liNode = outlineEditor.lastActiveNode;
-        console.log("li node in outliner is: ",liNode);
+        //console.log("li node in outliner is: ",liNode);
 
         if (liNode && liNode.tagName === 'LI') {
             const newItem = document.createElement('li');
@@ -115,9 +119,44 @@ function outliner() {
         }
     };
 
+    // 保存item数据
+    outlineEditor.saveData = function () {
+        const items = Array.from(editorContainer.querySelectorAll('li'));
+        items.shift(); // 去除第一个start time item
+        const data = [];
+    
+        items.forEach((item) => {
+            const itemData = {
+                text: item.textContent.slice(1), // Remove zero-width space
+                class: item.className,
+                index: item.dataset.index,
+                indentLevel: parseInt(item.style.marginLeft || 0) / 20,
+            };
+            data.push(itemData);
+        });
+    
+        localStorage.setItem('outlinerData', JSON.stringify(data));
+    };
+
+
+    // Add restoreData method to the outlineEditor element
+    // 重置数据
+    outlineEditor.restoreData = function () {
+        const data = JSON.parse(localStorage.getItem('outlinerData') || '[]');
+    
+        data.forEach((itemData) => {
+            const newItem = document.createElement('li');
+            newItem.textContent = '\u200B' + itemData.text; // Zero-width space
+            newItem.classList.add(itemData.class);
+            newItem.dataset.index = itemData.index;
+            newItem.style.marginLeft = `${itemData.indentLevel * 20}px`;
+    
+            outlineEditor.appendChild(newItem);
+        });
+    };
+
     // 获得所有的文本
     function processItems(items, indentLevel = 0) {
-
         let result = '';
       
         items.forEach((item) => {
@@ -143,11 +182,11 @@ function outliner() {
         return result;
     }
 
+    // 单纯文本输出
+    // 包含大纲缩进
     outlineEditor.exportAllItems = function() {
-
         const topLevelItems = editorContainer.querySelectorAll(':scope > ul > li');
         const itemsText = processItems(topLevelItems);
-
         return itemsText  
     };
 
@@ -219,29 +258,15 @@ function outliner() {
     // Check if is chinese input ongoing
     let isComposing = false;
     function checkChineseInput(inputDom) {
-
         inputDom.addEventListener('compositionstart', function () {
             isComposing = true;
         });
-
         inputDom.addEventListener('compositionend', function () {
             isComposing = false;
         });
     }
     checkChineseInput(editorContainer);
 
-    // Add a dblclick event listener to toggle fold and unfold
-    outlineEditor.addEventListener('dblclick', (e) => {
-        const currentNode = e.target;
-        if (currentNode.tagName === 'LI') {
-            const nestedList = currentNode.querySelector('ul');
-            if (nestedList && nestedList.style.display !== 'none') {
-                outlineEditor.fold(currentNode);
-            } else {
-                outlineEditor.unfold(currentNode);
-            }
-        }
-    });
 
     // Get the closest 'li' element from the given node
     function getClosestLiElement(node) {
@@ -264,6 +289,19 @@ function outliner() {
     //------------------------------
     // 对于outlineEditor的一些事件侦听
     //------------------------------
+
+    // Add a dblclick event listener to toggle fold and unfold
+    outlineEditor.addEventListener('dblclick', (e) => {
+        const currentNode = e.target;
+        if (currentNode.tagName === 'LI') {
+            const nestedList = currentNode.querySelector('ul');
+            if (nestedList && nestedList.style.display !== 'none') {
+                outlineEditor.fold(currentNode);
+            } else {
+                outlineEditor.unfold(currentNode);
+            }
+        }
+    });
 
     // Handle keyboard events for indent, outdent, and new items
     outlineEditor.addEventListener('keydown', (e) => {
@@ -317,15 +355,15 @@ function outliner() {
     // Apply the 2-space indent to all nested lists
     const nestedListStyle = document.createElement('style');
     nestedListStyle.innerHTML = `
-      ul ul {
-        padding-left: 1ch;
-      }
-      ul {
-        list-style-position: inside; // Adjust the position of li::marker to inside
-      }
-      li {
-        padding-left: 1px; // Add left padding to display the input cursor
-      }
+        ul ul {
+          padding-left: 1ch;
+        }
+        ul {
+          list-style-position: inside; // Adjust the position of li::marker to inside
+        }
+        li {
+          padding-left: 1px; // Add left padding to display the input cursor
+        }
     `;
     document.head.appendChild(nestedListStyle);
 2
