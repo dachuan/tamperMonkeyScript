@@ -31,7 +31,7 @@
  * */
 
 function outliner() {
-    console.log('different url!');
+    console.log('ok');
 
     // Track the Shift key state
     let shiftKeyPressed = false;

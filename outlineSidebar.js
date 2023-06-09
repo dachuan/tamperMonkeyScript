@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.2.1
+// @version      0.2.2
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -49,7 +49,7 @@
 (function() {
     'use strict';
 
-    console.log('subling bugs');
+    console.log('newly fixed.');
 
     // 创建一个 <style> 元素
     const style = document.createElement('style');
@@ -276,11 +276,6 @@
             window.getSelection().removeAllRanges();
         }
 
-        //tmp for trace the restore
-        if (event.key === 'q') {
-            event.preventDefault();
-            console.log("outlineEditor is : ", olEditor.outlineEditor);
-        }
     }
     document.addEventListener('keydown', handleKeyDown);
 
@@ -321,7 +316,7 @@
         // 重新恢复页面
         // 包含outliner与页面高亮
         webStorage.applyAllData = function() {
-            console.log('loading data...');
+            //console.log('loading data...');
 
             // 读取，并重新高亮
             if (savedHighlightData) {
@@ -329,7 +324,7 @@
                 parsedData.forEach((entry) => {
                   applyHighlight(entry);
                 });
-                console.log('apply all highlighted.');
+                //console.log('apply all highlighted.');
             }
 
             // 读取，并重新形成outliner
@@ -346,7 +341,7 @@
                     }
                 });
             });
-            console.log('apply outliner.');
+            //console.log('apply outliner.');
         }
       
         // 存储数据
@@ -363,11 +358,11 @@
             // 使用当前页面的 URL 作为存储键
             const storageKey = 'highlightedData_' + window.location.href;
             localStorage.setItem(storageKey, JSON.stringify(data));
-            console.log('highlighted saved.');
+            //console.log('highlighted saved.');
 
             // 调用outliner中的数据保存方法
             olEditor.outlineEditor.saveData();
-            console.log('outliner saved');
+            //console.log('outliner saved');
       
         }
       
@@ -400,9 +395,9 @@
         }
       
         function applyHighlight(entry) {
-            console.log('text: ', entry.text);
-            console.log('xpath: ', entry.xpath);
-            console.log(' ------------------------------')
+            //console.log('text: ', entry.text);
+            //console.log('xpath: ', entry.xpath);
+            //console.log(' ------------------------------')
             const parent = document.evaluate(
               entry.xpath,
               document,
