@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.2.0
+// @version      0.2.1
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -13,6 +13,12 @@
 
 /*
  * 改造成outline
+ *  ------------------------------
+ *  2023/6/9 下午3:52
+ *  ------------------------------
+ *  调整localStorage的key
+ *  指向每一个页面href
+ *
  *  ------------------------------
  *  2023/6/8 下午2:26
  *  ------------------------------
@@ -42,7 +48,7 @@
 (function() {
     'use strict';
 
-    console.log('from outliner!data restore.');
+    console.log('hightlight bugs');
 
     // 创建一个 <style> 元素
     const style = document.createElement('style');
@@ -307,9 +313,9 @@
         //
         const webStorage = {};
       
-        const savedHighlightData = localStorage.getItem('tampermonkeyHighlightedText');
-        const savedOutlinerData = localStorage.getItem('outlinerData');
-        console.log(savedOutlinerData);
+        const storageKey = 'highlightedData_' + window.location.href;
+        const savedHighlightData = localStorage.getItem(storageKey);
+        //console.log(savedOutlinerData);
       
         // 重新恢复页面
         // 包含outliner与页面高亮
@@ -331,7 +337,7 @@
             const snippets = Array.from(olEditor.outlineEditor.querySelectorAll('li')).filter(item => item.classList.contains('snippet'));
             snippets.forEach(snippet => {
                 snippet.addEventListener('click', (e) => {
-                    console.log("clicked");
+                    //console.log("clicked");
                     e.stopPropagation(); // 防止事件冒泡
                     const highlighted = document.querySelector(`.highlighted[data-index="${snippet.dataset.index}"]`);
                     if (highlighted) {
@@ -352,7 +358,10 @@
                 dataset_index: span.dataset.index
               };
             });
-            localStorage.setItem('tampermonkeyHighlightedText', JSON.stringify(data));
+
+            // 使用当前页面的 URL 作为存储键
+            const storageKey = 'highlightedData_' + window.location.href;
+            localStorage.setItem(storageKey, JSON.stringify(data));
             console.log('highlighted saved.');
 
             // 调用outliner中的数据保存方法
@@ -386,6 +395,9 @@
         }
       
         function applyHighlight(entry) {
+            console.log('text: ', entry.text);
+            console.log('xpath: ', entry.xpath);
+            console.log(' ------------------------------')
             const parent = document.evaluate(
               entry.xpath,
               document,

@@ -1,4 +1,9 @@
 /*
+ *  2023/6/9 下午3:30
+ *  ------------------------------
+ *  调整storageKey，使得不同页面保存不同数据
+ *  避免出现相同域名的数据不独立
+ *
  *  2023/6/8 下午9:40
  *  ------------------------------
  *  增加数据存储到local storage的方法
@@ -26,7 +31,7 @@
  * */
 
 function outliner() {
-    console.log('!from module.Save data.');
+    console.log('different url!');
 
     // Track the Shift key state
     let shiftKeyPressed = false;
@@ -135,14 +140,18 @@ function outliner() {
             data.push(itemData);
         });
     
-        localStorage.setItem('outlinerData', JSON.stringify(data));
+        // 使用当前页面的 URL 作为存储键
+        const storageKey = 'outlinerData_' + window.location.href;
+        localStorage.setItem(storageKey, JSON.stringify(data));
     };
 
 
     // Add restoreData method to the outlineEditor element
     // 重置数据
     outlineEditor.restoreData = function () {
-        const data = JSON.parse(localStorage.getItem('outlinerData') || '[]');
+        // 使用当前页面的 URL 作为读取键
+        const storageKey = 'outlinerData_' + window.location.href;
+        const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
     
         data.forEach((itemData) => {
             const newItem = document.createElement('li');
