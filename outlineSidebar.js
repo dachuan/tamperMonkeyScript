@@ -18,6 +18,7 @@
  *  ------------------------------
  *  调整localStorage的key
  *  指向每一个页面href
+ *  修正getXpath函数的bug
  *
  *  ------------------------------
  *  2023/6/8 下午2:26
@@ -48,7 +49,7 @@
 (function() {
     'use strict';
 
-    console.log('hightlight bugs');
+    console.log('subling bugs');
 
     // 创建一个 <style> 元素
     const style = document.createElement('style');
@@ -381,7 +382,11 @@
             let siblingIndex = 1;
             let sibling = element;
             while ((sibling = sibling.previousElementSibling)) {
-              siblingIndex++;
+                // 改进，只计算相同tag的兄弟节点
+                if (sibling.tagName === element.tagName) {
+                  siblingIndex++;
+                }
+              //siblingIndex++;
             }
       
             return (
