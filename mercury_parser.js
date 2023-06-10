@@ -5,7 +5,7 @@
 // @description  mercury parser 
 // @author       dcthehiker
 // @match        *://*/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=postlight.com
 // @grant        none
 // ==/UserScript==
 
