@@ -14,14 +14,14 @@
     // Create the iframe element
     const iframe = document.createElement('iframe');
     iframe.src="https://app.databerry.ai/agents/clio35euh0000e9og962d4g16/iframe";
-    iframe.style.width = '100%';
-    iframe.style.height = 'calc(100% - 20px)'; // Adjust height to account for the title bar
+    iframe.style.width = '120%';
+    iframe.style.height = 'calc(200% - 20px)'; // Adjust height to account for the title bar
     iframe.style.border = '1px solid #ccc';
 
     // Create the title bar
     const titleBar = document.createElement('div');
     titleBar.textContent = 'Ask me anything';
-    titleBar.style.width = '100%';
+    titleBar.style.width = '120%';
     titleBar.style.height = '20px';
     titleBar.style.backgroundColor = '#ccc';
     titleBar.style.color = '#000';
