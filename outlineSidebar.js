@@ -17,8 +17,9 @@
  *  2023/6/10 下午5:31
  *  ------------------------------
  *  改进数据存储机制
- *  当sidebar元素有变化时
- *  自动保存
+ *  - 当sidebar元素有变化时
+ *  - 自动保存
+ *  sidebar可拖动
  *
  *  ------------------------------
  *  2023/6/9 下午3:52
@@ -100,6 +101,7 @@
     sidebar.style.cssText = `
         position: fixed;
         right: 0;
+        //top: 100px;
         top: 50%;
         width: 400px;
         height: 300px;
@@ -113,6 +115,24 @@
         opacity: 0;
         z-index: -9999;
     `;
+
+    // draggable 
+    sidebar.draggable="true";
+    let mouse = { x: 0, y: 0 };
+    sidebar.ondragstart = function() {
+        // 记录鼠标与sidebar之间的距离
+        mouse = {
+            x: event.offsetX,
+            y: event.offsetY
+        }
+    }
+    // 拖拽结束
+    sidebar.ondragend = function() {
+        // sidebar的位置 = 鼠标与页面之间的距离 - 鼠标与sidebar之间的距离
+        sidebar.style.left = event.pageX - mouse.x + "px";
+        sidebar.style.top = event.pageY - mouse.y + "px";
+        sidebar.style.transform = ''; //去除transform的影响，避免位置跳跃
+    }
 
     // Make the title fixed at the top of the sidebar
     const titleContainer = document.createElement('div');
@@ -455,7 +475,7 @@
         
         // 观察器的配置（需要观察哪些变动）
         const config_change = {
-            attributes: true,
+            //attributes: true,
             childList: true,
             subtree: true
         };
