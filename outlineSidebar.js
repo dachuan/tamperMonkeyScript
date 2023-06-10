@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.2.2
+// @version      0.2.3
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -13,6 +13,13 @@
 
 /*
  * 改造成outline
+ *  ------------------------------
+ *  2023/6/10 下午5:31
+ *  ------------------------------
+ *  改进数据存储机制
+ *  当sidebar元素有变化时
+ *  自动保存
+ *
  *  ------------------------------
  *  2023/6/9 下午3:52
  *  ------------------------------
@@ -435,6 +442,36 @@
       
         return webStorage
     }
+
+    // 监控sidebar中的元素变化，进行存储
+    const targetNode = sidebar;
+
+    function autoSave(targetNode){
+        // 回调函数，当监控行为观察到变化时执行
+        const callback_save = function(mutationsList, observer) {
+            webStorage.saveAllAnnotations();
+            console.log('save all data to local storage.');
+        };
+        
+        // 观察器的配置（需要观察哪些变动）
+        const config_change = {
+            attributes: true,
+            childList: true,
+            subtree: true
+        };
+        
+        // 创建一个观察器实例并传入回调函数
+        const observer_save = new MutationObserver(callback_save);
+        
+        // 用配置文件开始观察目标节点
+        observer_save.observe(targetNode, config_change);
+        
+        // 之后，你可以使用下面的代码停止观察
+        // observer.disconnect();
+    }
+
+    autoSave(targetNode);
+    
 
     // ------------------------------
     // backup
