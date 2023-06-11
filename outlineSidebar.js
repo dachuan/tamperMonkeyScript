@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.2.3
+// @version      0.2.4
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -13,6 +13,13 @@
 
 /*
  * 改造成outline
+ *  ------------------------------
+ *  2023/6/11 下午1:29
+ *  ------------------------------
+ *  autoSave添加一个 blur 事件侦听器
+ *  用于在焦点离开时自动保存
+ *  避免最后一个item丢失
+ *
  *  ------------------------------
  *  2023/6/10 下午5:31
  *  ------------------------------
@@ -57,7 +64,7 @@
 (function() {
     'use strict';
 
-    console.log('newly fixed.');
+    console.log('autosave newly fixed.');
 
     // 创建一个 <style> 元素
     const style = document.createElement('style');
@@ -129,8 +136,8 @@
     // 拖拽结束
     sidebar.ondragend = function() {
         // sidebar的位置 = 鼠标与页面之间的距离 - 鼠标与sidebar之间的距离
-        sidebar.style.left = event.pageX - mouse.x + "px";
-        sidebar.style.top = event.pageY - mouse.y + "px";
+        sidebar.style.left = event.clientX - mouse.x + "px";
+        sidebar.style.top = event.clientY - mouse.y + "px";
         sidebar.style.transform = ''; //去除transform的影响，避免位置跳跃
     }
 
@@ -470,7 +477,7 @@
         // 回调函数，当监控行为观察到变化时执行
         const callback_save = function(mutationsList, observer) {
             webStorage.saveAllAnnotations();
-            console.log('save all data to local storage.');
+            //console.log('save all data to local storage.');
         };
         
         // 观察器的配置（需要观察哪些变动）
@@ -486,6 +493,13 @@
         // 用配置文件开始观察目标节点
         observer_save.observe(targetNode, config_change);
         
+        // 添加一个 blur 事件侦听器，用于在焦点离开时自动保存
+        const onBlur = function (event) {
+            webStorage.saveAllAnnotations();
+            //console.log('save all data to local storage on blur.');
+        };
+        targetNode.addEventListener('blur', onBlur, true);
+
         // 之后，你可以使用下面的代码停止观察
         // observer.disconnect();
     }
