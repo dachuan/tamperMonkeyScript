@@ -1,4 +1,9 @@
 /*
+ *  2023/6/12 上午11:08
+ *  ------------------------------
+ *  调整了outline的数据重置方法
+ *  目前可以正确还原层级结构
+ *
  *  2023/6/11 下午1:31
  *  ------------------------------
  *  调整了indent的计算方法
@@ -169,95 +174,81 @@ function outliner() {
 
     // Add restoreData method to the outlineEditor element
     // 重置数据
-    outlineEditor.restoreData = function () {
-        // 使用当前页面的 URL 作为读取键
+     outlineEditor.restoreData = function () {
+        console.log('restore the outliner.');
         const storageKey = 'outlinerData_' + window.location.href;
         const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
-
-        console.log('loaded data is: ', data);
+        console.log("loading data: ", data);
+        const ulElement = editorContainer.querySelector('ul');
     
-        data.forEach((itemData) => {
+        // 保留 startItem
+        const startItem = ulElement.querySelector('.starter');
+        ulElement.innerHTML = ''; // 清空ul元素
+    
+        const createNestedUls = function (level) {
+            let ul = document.createElement('ul');
+            let currentUl = ul;
+    
+            for (let i = 1; i < level; i++) {
+                const nestedUl = document.createElement('ul');
+                currentUl.appendChild(nestedUl);
+                currentUl = nestedUl;
+            }
+    
+            return ul;
+        };
+    
+        data.forEach((itemData, index) => {
             const newItem = document.createElement('li');
             newItem.textContent = '\u200B' + itemData.text; // Zero-width space
             newItem.classList.add(itemData.class);
             newItem.dataset.index = itemData.index;
-            newItem.dataset.indentLevel = itemData.indentLevel;
-
-            console.log('li text is: ', itemData.text);
-            console.log('indent is: ', `${itemData.indentLevel}`);
-            
-            newItem.style.marginLeft = `${itemData.indentLevel * 20}px`;
     
-            outlineEditor.appendChild(newItem);
+            let targetUl = ulElement;
+    
+            if (itemData.indentLevel > 0) {
+                const lastItem = data[index - 1] || {};
+                console.log('lastItem is: ', lastItem);
+                const prevItem = ulElement.querySelector(`[data-index="${lastItem.index}"]`);
+                console.log('prevItem is: ', prevItem);
+    
+                if (prevItem) {
+                    if (itemData.indentLevel === lastItem.indentLevel) {
+                        targetUl = prevItem.parentElement;
+                    } else if (itemData.indentLevel > lastItem.indentLevel) {
+                        const existingUl = prevItem.querySelector('ul');
+                        if (existingUl) {
+                            targetUl = existingUl;
+                        } else {
+                            const ulsToCreate = itemData.indentLevel - (lastItem.indentLevel || 0);
+                            const nestedUls = createNestedUls(ulsToCreate);
+                            prevItem.appendChild(nestedUls);
+                            targetUl = nestedUls.querySelector('ul:last-child') || nestedUls;
+                        }
+                    } else {
+                        let parentItem = prevItem;
+                        for (let i = 0; i < lastItem.indentLevel - itemData.indentLevel; i++) {
+                            parentItem = parentItem.parentElement.parentElement;
+                        }
+                        targetUl = parentItem.parentElement;
+                    }
+                }
+            }
+    
+            targetUl.appendChild(newItem);
         });
-    };
+    
+        // 重置 startItem
+        if (startItem) {
+            const firstItem = ulElement.querySelector('li:first-child');
+            if (firstItem) {
+                ulElement.insertBefore(startItem, firstItem);
+            } else {
+                ulElement.appendChild(startItem);
+            }
+        }
+    };   
 
-    //outlineEditor.restoreData = function () {
-    //    console.log('restore the outliner.');
-    //    const storageKey = 'outlinerData_' + window.location.href;
-    //    const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    //    const ulElement = editorContainer.querySelector('ul');
-    //
-    //    const createNestedUls = function (level) {
-    //        let ul = document.createElement('ul');
-    //        let currentUl = ul;
-    //
-    //        for (let i = 1; i < level; i++) {
-    //            const nestedUl = document.createElement('ul');
-    //            currentUl.appendChild(nestedUl);
-    //            currentUl = nestedUl;
-    //        }
-    //
-    //        return ul;
-    //    };
-    //
-    //    data.forEach((itemData, index) => {
-    //        const newItem = document.createElement('li');
-    //        newItem.textContent = '\u200B' + itemData.text; // Zero-width space
-    //        newItem.classList.add(itemData.class);
-    //        newItem.dataset.index = itemData.index;
-    //
-    //        let targetUl = ulElement;
-    //
-    //        if (itemData.indentLevel > 0) {
-    //            const lastItem = data[index - 1] || {};
-    //            console.log('lastItem is: ', lastItem);
-    //            const prevItem = ulElement.querySelector(`[data-index="${lastItem.index}"]`);
-    //            console.log('prevItem is: ', prevItem);
-    //
-    //            if (prevItem) {
-    //                const existingUl = prevItem.querySelector('ul');
-    //                if (existingUl) {
-    //                    targetUl = existingUl;
-    //                } else {
-    //                    const ulsToCreate = itemData.indentLevel - (lastItem.indentLevel || 0);
-    //                    const nestedUls = createNestedUls(ulsToCreate);
-    //                    prevItem.appendChild(nestedUls);
-    //                    targetUl = nestedUls.querySelector('ul:last-child') || nestedUls;
-    //                }
-    //            }
-    //        }
-    //
-    //        targetUl.appendChild(newItem);
-    //    });
-    //};
-
-    //outlineEditor.restoreData = function () {
-    //    // 使用当前页面的 URL 作为读取键
-    //    const storageKey = 'outlinerData_' + window.location.href;
-    //    const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    //
-    //    data.forEach((itemData) => {
-    //        const newItem = document.createElement('li');
-    //        newItem.textContent = '\u200B' + itemData.text; // Zero-width space
-    //        newItem.classList.add(itemData.class);
-    //        newItem.dataset.index = itemData.index;
-    //        //console.log('indent is: ', `${itemData.indentLevel}`);
-    //        //newItem.style.marginLeft = `${itemData.indentLevel * 20}px`;
-    //
-    //        outlineEditor.appendChild(newItem);
-    //    });
-    //};
 
     // 获得所有的文本
     function processItems(items, indentLevel = 0) {
