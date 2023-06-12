@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         B站笔记快捷键←↓→
 // @namespace    indefined
-// @version      0.2
+// @version      0.3
 // @description  修改大王鹅鹅鹅script
 // @author       dcthe
 // @match        http*://www.bilibili.com/video/*
@@ -11,6 +11,11 @@
 // ==/UserScript==
 
 /*
+ *  2023/6/11 下午9:39
+ *  ------------------------------
+ *  尝试使用异步来解决bug
+ *  调整成：先截图后打时间戳，貌似不再出错
+ *
  * 改用setTimeout的套嵌来实现多个按键按下
  *  2023/5/23 下午2:36
  * */
@@ -18,9 +23,54 @@
 (function() {
     'use strict';
 
+    console.log('bili notes');
+
     // JS监听键盘快捷键事件
     document.addEventListener('keydown', function (event)
     {
+
+        if (event.ctrlKey && event.keyCode == 32) {//插入文本：Ctrl+space
+             document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered").click();
+             setTimeout(1 * 100 );
+             document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered").click();
+        };
+
+        async function sleep(ms) {
+          return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+        
+        async function setTimeAndSnapshot(){
+        
+            const time_btn = document.querySelector('i.bili-note-iconfont.iconicon_flag_L');
+            let yes_btn;
+            const screen_btn = document.querySelector('i.bili-note-iconfont.iconcapture-app');
+            const list_btn = document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered");
+        
+            await sleep(100);
+            screen_btn.click();
+        
+            await sleep(100);
+            time_btn.click();
+        
+            await sleep(100);
+            if (!yes_btn) {
+              yes_btn = document.querySelector('div.dialog-btn.tag-dialog__btn--confirm:nth-child(2)');
+            }
+        
+            await sleep(100);
+            yes_btn.click();
+        
+            await sleep(100);
+            list_btn.click();
+            list_btn.click();
+        
+        }
+        
+          if (event.ctrlKey && event.keyCode == 13) {
+              setTimeAndSnapshot();
+          }
+    
+        /*
         if (event.ctrlKey && event.keyCode == 13) {//截图+时间戳——快捷键：ctrl+Enter
             
             // 3 buttons here
@@ -49,13 +99,7 @@
               },200);
             }, 100);
         }
-
-        if (event.ctrlKey && event.keyCode == 32) {//插入文本：Ctrl+space
-             document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered").click();
-             setTimeout(1 * 100 );
-             document.querySelector("i.icon.bili-note-iconfont.iconiconfont_icon_unordered").click();
-        };
-    
+        */
     
 
         /*
