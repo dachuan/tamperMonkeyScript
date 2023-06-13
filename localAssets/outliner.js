@@ -178,7 +178,7 @@ function outliner() {
         console.log('restore the outliner.');
         const storageKey = 'outlinerData_' + window.location.href;
         const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        console.log("loading data: ", data);
+        //console.log("loading data: ", data);
         const ulElement = editorContainer.querySelector('ul');
     
         // 保留 startItem
@@ -208,9 +208,7 @@ function outliner() {
     
             if (itemData.indentLevel > 0) {
                 const lastItem = data[index - 1] || {};
-                console.log('lastItem is: ', lastItem);
                 const prevItem = ulElement.querySelector(`[data-index="${lastItem.index}"]`);
-                console.log('prevItem is: ', prevItem);
     
                 if (prevItem) {
                     if (itemData.indentLevel === lastItem.indentLevel) {

@@ -4,12 +4,15 @@
 // @version      0.0.5
 // @description  实现一个聊天对话框
 // @author       dcthehiker
-// @match        file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/test/index.html
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=zhihu.com
 // @grant        none
 // ==/UserScript==
 
-/* 流式显示成功
+/* 2023/6/13 上午10:38
+ * ------------------------------
+ *  scroll to bottom
+ *
+ * 流式显示成功
  * 滚动条需要调整，目前没有跟着往下
  */
 
@@ -187,10 +190,12 @@
                 lines.forEach(line => {
                     const match = line.match(/{"content":"([^"]*)"/);
                     if (match) {
-                        console.log(match[1]);
+                        //console.log(match[1]);
                         response_str += match[1];
                         // render botText
                         responseSpan.innerHTML = response_str;
+                        // 随文字下拉
+                        chatLog.scrollTop = chatLog.scrollHeight;
                     }
                 });
     
