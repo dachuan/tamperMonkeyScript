@@ -8,10 +8,17 @@
 // @exclude      /^https://.*?126.com/*/
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=workflowy.com
 // @require      file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/localAssets/outliner.js
+// @require      file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/localAssets/chatter.js
 // @grant        none
 // ==/UserScript==
 
 /*
+ * 整合chatbox
+ *  ------------------------------
+ *  2023/6/13 下午1:16
+ *  ------------------------------
+ *  将chatWithGPT整合
+ *
  * 改造成outline
  *  ------------------------------
  *  2023/6/11 下午1:29
@@ -64,8 +71,10 @@
 (function() {
     'use strict';
 
-    console.log('autosave newly fixed.');
+    console.log('chat with GPT');
 
+    /* styel set */
+    //---------start---------------------
     // 创建一个 <style> 元素
     const style = document.createElement('style');
     style.type = 'text/css';
@@ -90,25 +99,28 @@
             font-weight: normal;
             opacity: 100;
             color: #333;
-        }
-    `;
+        }`;
 
     // 将 <style> 元素添加到页面的 <head> 中
     document.head.appendChild(style);
+    //--------end----------------------
 
-    // 初始化outliner，存储数据
-    const olEditor = outliner();
+    /* 初始化数据*/
+    //---------start---------------------
+    const olEditor = outliner(); // 初始化outliner, required
+    const chatBox = chatter().chatBox; // 初始化chatbox, required
     const webStorage = annotationStorage();
+    let runScript = false; // 脚本开关
+    //--------end----------------------
 
-    // 脚本开关
-    let runScript = false;
+    /* sidebar 创建 */
+    //---------start---------------------
 
-    // 创建一个侧边栏容器
+    //// 创建一个侧边栏容器
     const sidebar = document.createElement('div');
     sidebar.style.cssText = `
         position: fixed;
         right: 0;
-        //top: 100px;
         top: 50%;
         width: 400px;
         height: 300px;
@@ -123,7 +135,7 @@
         z-index: -9999;
     `;
 
-    // draggable 
+    // draggable
     sidebar.draggable="true";
     let mouse = { x: 0, y: 0 };
     sidebar.ondragstart = function() {
@@ -141,10 +153,18 @@
         sidebar.style.transform = ''; //去除transform的影响，避免位置跳跃
     }
 
-    // Make the title fixed at the top of the sidebar
-    const titleContainer = document.createElement('div');
-    titleContainer.textContent = 'Quotations -------------------- click save all';
-    titleContainer.style.cssText = `
+    //// 创建outliner面板
+
+    // 容器
+    const outlinerPanel = document.createElement('div');
+    outlinerPanel.style.cssText = `
+       display: 'block', 
+    `;
+
+    // Make the title fixed at the top of the outlinerPanel
+    const titleContainerOutliner = document.createElement('div');
+    titleContainerOutliner.textContent = 'Quotations -------------------- click save all';
+    titleContainerOutliner.style.cssText = `
         position: sticky;
         top: 0;
         font-size: 14px;
@@ -154,7 +174,7 @@
 
     // 点击title复制所有文本条目
     // 同时将数据保存到local storage
-    titleContainer.addEventListener('click', function(event) {
+    titleContainerOutliner.addEventListener('click', function(event) {
         var url = window.location.origin + window.location.pathname;
         var title = document.title;
         var linkage = `[${title}](${url})`;
@@ -175,8 +195,11 @@
         webStorage.saveAllAnnotations();
     });
 
-    sidebar.appendChild(titleContainer);
-    sidebar.appendChild(olEditor);
+    // 添加到sidebar
+    document.body.appendChild(sidebar);
+    sidebar.appendChild(outlinerPanel);
+    outlinerPanel.appendChild(titleContainerOutliner);
+    outlinerPanel.appendChild(olEditor);
 
     // copied 消息提示
     function tipOfCopy(){
@@ -201,10 +224,67 @@
         }, 1000);
     }
 
-    // 添加侧边栏到页面
-    document.body.appendChild(sidebar);
+    //// 创建chatbox面板
+    
+    const chatPanel = document.createElement('div');
+    chatPanel.style.cssText = `
+       display: 'none', 
+    `;
 
-    // 添加一个控制sidebar出现的按钮
+    // Make the title fixed at the top of the chatPanel
+    const titleContainerChat = document.createElement('div');
+    titleContainerChat.textContent = 'chat with GPT';
+    titleContainerChat.style.cssText = `
+        position: sticky;
+        top: 0;
+        font-size: 14px;
+        font-weight: bold;
+        background-color: #4211f4;
+    `;
+
+    // 添加到sidebar
+    sidebar.appendChild(chatPanel);
+    chatPanel.appendChild(titleContainerChat);
+    chatPanel.appendChild(chatBox);
+
+    // 初始两个panel的显示设置
+    outlinerPanel.style.display = 'block';
+    chatPanel.style.display = 'none';
+
+    //// 添加一个面板切换的按钮
+    
+    const switchButton = document.createElement('button');
+    switchButton.textContent = 's';
+    switchButton.style.cssText = `
+        position: fixed;
+        top: 60px;
+        right: 50px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #111;
+        color: white;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        z-index: 9999;
+    `;
+
+     // Add click event listener to the switch button
+     switchButton.addEventListener('click', () => {
+         if (outlinerPanel.style.display === 'block') {
+             outlinerPanel.style.display = 'none';
+             chatPanel.style.display = 'block';
+         } else {
+             outlinerPanel.style.display = 'block';
+             chatPanel.style.display = 'none';
+         }
+     });
+
+    document.body.appendChild(switchButton);
+
+
+    //// 添加一个控制sidebar出现的按钮
     const toggleSidebar = document.createElement('button');
     toggleSidebar.textContent = '+';
     toggleSidebar.style.cssText = `
@@ -470,8 +550,6 @@
         return webStorage
     }
 
-    // 监控sidebar中的元素变化，进行存储
-    const targetNode = sidebar;
 
     function autoSave(targetNode){
         // 回调函数，当监控行为观察到变化时执行
@@ -504,8 +582,8 @@
         // observer.disconnect();
     }
 
+    const targetNode = sidebar; // 监控sidebar中的元素变化，进行存储
     autoSave(targetNode);
-    
 
     // ------------------------------
     // backup
