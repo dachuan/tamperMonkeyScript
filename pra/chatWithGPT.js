@@ -188,7 +188,7 @@
                 partialData = lines.pop();
     
                 lines.forEach(line => {
-                    const match = line.match(/{"content":"([^"]*)"/);
+                    const match = line.match(/"content":"([^"]*)"/);
                     if (match) {
                         //console.log(match[1]);
                         response_str += match[1];
