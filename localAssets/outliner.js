@@ -1,4 +1,8 @@
 /*
+ *  2023/6/15 下午9:09
+ *  ------------------------------
+ *  新增加item，滚动到最后
+ *
  *  2023/6/12 上午11:08
  *  ------------------------------
  *  调整了outline的数据重置方法
@@ -113,6 +117,8 @@ function outliner() {
             sel.addRange(newRange);
             outlineEditor.lastActiveNode = newItem; // 更新lastActiveNode
             //console.log("2 last active node is: ",outlineEditor.lastActiveNode);
+            //滚动到最后
+            outlineEditor.scrollTop = outlineEditor.scrollHeight;
         }
     };
 
@@ -132,6 +138,8 @@ function outliner() {
 
             liNode.parentNode.insertBefore(newItem, liNode.nextSibling);
             outlineEditor.lastActiveNode = newItem; // 更新lastActiveNode
+            //滚动到最后
+            outlineEditor.scrollTop = outlineEditor.scrollHeight;
         }
     };
 

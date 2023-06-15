@@ -75,6 +75,8 @@ function chatter(){
         display : inline-block;
         text-align : left;
         white-space: pre-wrap;
+        user-select: text;
+        cursor: text;
     `;
 
 
@@ -85,6 +87,8 @@ function chatter(){
         display : inline-block;
         text-align : left;
         white-space: pre-wrap;
+        user-select: text;
+        cursor: text;
     `;
 
     // Create the chat box
@@ -94,6 +98,8 @@ function chatter(){
 
     // Create the chat log
     var chatLog = document.createElement('div');
+    chatLog.contentEditable = 'true'; // 文本可选择的一个变通方法
+    chatLog.classList.add('chatLog');
     chatLog.style.cssText = chatLogCSS;
     chatBox.appendChild(chatLog);
 
@@ -166,11 +172,22 @@ function chatter(){
             'Authorization': `Bearer ${API_KEY}`,
         };
     
+        // 3.5 turbo
         const requestBody = {
             model: 'gpt-3.5-turbo',
             messages: [{ role: "user", content: question }],
             stream: true,
         };
+
+        // 16k
+        //const requestBody = {
+        //    model: 'gpt-3.5-turbo-16k',
+        //    messages: [
+        //        { role: "system", content: "任务：用Minto Pyramid结构重写。输出格式：Conclusion:...Key arguments:- key1 - key2- ...Detailed information:...用中文回复。下面是需要你重写的内容:"},
+        //        { role: "user", content: question }
+        //    ],
+        //    stream: true,
+        //};
     
         fetch(API_URL, {
             method: 'POST',

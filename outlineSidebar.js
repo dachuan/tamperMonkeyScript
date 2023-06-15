@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.2.4
+// @version      0.2.5
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -14,6 +14,13 @@
 
 /*
  * 整合chatbox
+ *  ------------------------------
+ *  2023/6/15 下午9:31
+ *  ------------------------------
+ *  整合了switch按钮
+ *  拖动及文本选择等
+ *  样式初步成型
+ *
  *  ------------------------------
  *  2023/6/13 下午1:16
  *  ------------------------------
@@ -80,12 +87,29 @@
     style.type = 'text/css';
 
     // 设置 CSS 规则
+    // :focus设置outline:none 去除焦点时候的外框
     style.innerHTML = `
         .inner-item {
             font-size: 12px;
             font-weight: normal;
             opacity: 100;
             color: #333;
+        }
+
+        .outliner-container {
+            height: 420px;
+        }
+
+        .outliner-container > ul:focus {
+            outline: none;
+        }
+
+        textarea:focus {
+            outline: none;
+        }
+
+        .chatLog:focus {
+            outline: none;
         }
 
         .snippet {
@@ -138,6 +162,9 @@
     // draggable
     sidebar.draggable="true";
     let mouse = { x: 0, y: 0 };
+
+    // 防止子元素不能选择
+
     sidebar.ondragstart = function() {
         // 记录鼠标与sidebar之间的距离
         mouse = {
@@ -153,12 +180,40 @@
         sidebar.style.transform = ''; //去除transform的影响，避免位置跳跃
     }
 
+    /* 另一种drag的方法
+    let isDraggable = false;
+    let startX, startY, initialX, initialY;
+
+    sidebar.addEventListener('mousedown', (e) => {
+        if (e.target === titleContainerChat || e.target === titleContainerOutliner) {
+            isDraggable = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialX = sidebar.offsetLeft;
+            initialY = sidebar.offsetTop;
+        }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (isDraggable) {
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            sidebar.style.left = `${initialX + deltaX}px`;
+            sidebar.style.top = `${initialY + deltaY}px`;
+        }
+    });
+    
+    document.addEventListener('mouseup', () => {
+        isDraggable = false;
+    });
+    */
+
     //// 创建outliner面板
 
     // 容器
     const outlinerPanel = document.createElement('div');
     outlinerPanel.style.cssText = `
-       display: 'block', 
+       display: 'block'; 
     `;
 
     // Make the title fixed at the top of the outlinerPanel
@@ -376,7 +431,7 @@
             // 清除选区，避免重复添加
             window.getSelection().removeAllRanges();
             // 滚动到最后
-            sidebar.scrollTop = sidebar.scrollHeight;
+            //sidebar.scrollTop = sidebar.scrollHeight;
         }
     });
 
