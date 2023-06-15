@@ -123,7 +123,7 @@
         right: 0;
         top: 50%;
         width: 400px;
-        height: 300px;
+        height: 450px;
         background: white;
         border-left: 1px solid #ccc;
         overflow-y: auto;
@@ -163,13 +163,15 @@
 
     // Make the title fixed at the top of the outlinerPanel
     const titleContainerOutliner = document.createElement('div');
-    titleContainerOutliner.textContent = 'Quotations -------------------- click save all';
+    titleContainerOutliner.textContent = 'Quotations';
     titleContainerOutliner.style.cssText = `
         position: sticky;
         top: 0;
         font-size: 14px;
         font-weight: bold;
+        color: #000;
         background-color: #42bbf4;
+        text-align: center;
     `;
 
     // 点击title复制所有文本条目
@@ -207,7 +209,7 @@
         const tip = document.createElement('div');
         tip.textContent = 'All quotations copied.';
         tip.style.cssText = `
-            position: fixed;
+            position: absolute;
             top: 50%;
             left: 50%;
             transition: opacity 1s ease-in-out;
@@ -216,7 +218,7 @@
         `;
 
         // 插入到文档中
-        document.body.appendChild(tip);
+        sidebar.appendChild(tip);
 
         // 1 秒后隐藏提示
         setTimeout(() => {
@@ -239,7 +241,9 @@
         top: 0;
         font-size: 14px;
         font-weight: bold;
-        background-color: #4211f4;
+        color: #000;
+        background-color: #42bbf4; // #bb42f4;
+        text-align: center;
     `;
 
     // 添加到sidebar
@@ -252,13 +256,12 @@
     chatPanel.style.display = 'none';
 
     //// 添加一个面板切换的按钮
-    
     const switchButton = document.createElement('button');
     switchButton.textContent = 's';
     switchButton.style.cssText = `
-        position: fixed;
-        top: 60px;
-        right: 50px;
+        position: absolute;
+        top: 6px;
+        left: 6px;
         width: 30px;
         height: 30px;
         border-radius: 50%;
@@ -268,6 +271,7 @@
         outline: none;
         cursor: pointer;
         z-index: 9999;
+        font-size: 16px;
     `;
 
      // Add click event listener to the switch button
@@ -281,7 +285,8 @@
          }
      });
 
-    document.body.appendChild(switchButton);
+    sidebar.appendChild(switchButton);
+    //document.body.appendChild(switchButton);
 
 
     //// 添加一个控制sidebar出现的按钮
@@ -321,7 +326,12 @@
         if (olEditor.outlineEditor.children.length === 0) {
             const startItem = document.createElement('li');
             startItem.classList.add('starter');
-            startItem.textContent = '\u200B' + startTime; // Zero-width space
+            startItem.textContent = startTime; // Zero-width space
+            //startItem.textContent = '\u200B' + startTime; // Zero-width space
+            startItem.style.cssText =`
+               text-align: right; 
+               font-size: 10px;
+            `;
             olEditor.outlineEditor.appendChild(startItem);
             olEditor.outlineEditor.lastActiveNode = startItem;
 

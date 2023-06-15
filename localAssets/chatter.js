@@ -11,13 +11,11 @@ function chatter(){
     const ele = {};
 
     const chatBoxCSS = `
-        //position : fixed;
-        //bottom : 10px;
-        //right : 10px;
+        display : flex;
+        flex-direction : column;
+        justify-content: center;
+        align-items: center;
         backgroundColor : #fff;
-        border : 1px solid #000;
-        //width : 300px;
-        //height : 440px;
         overflow : hidden;
     `;
 
@@ -29,15 +27,30 @@ function chatter(){
         overflow : auto;
     `;
 
+    const inputContainerCSS = `
+        display : flex;
+        flex-direction : row;
+        width : 96%;
+        height : 60px;
+        overflow : auto;
+        border: 1px solid #aaa;
+        margin-bottom: 10px;
+    `;
+
      const inputBoxCSS = `
         width: 90%;
         height: 60px;
-        margin-left : 15px;
         box-sizing: border-box;
+        border: none;
+        resize: none;
     `;
 
     const sendButtonCSS = `
-        margin-left : 250px;
+        //margin-right : 15px;
+        //border: lightblue;
+        //color: white;
+        //background-color: darkcyan;
+        //height: 90%;
     `;
 
     const userMessageCSS = `
@@ -56,8 +69,8 @@ function chatter(){
     `;
 
     const userTextCSS = `
-        background-color :  #007bff;
-        color : #fff;
+        background-color: #5d5cde;
+        color: #fff;
         font-size : 14px;
         display : inline-block;
         text-align : left;
@@ -84,18 +97,24 @@ function chatter(){
     chatLog.style.cssText = chatLogCSS;
     chatBox.appendChild(chatLog);
 
+    // Create the input container
+    var inputContainer = document.createElement('div');
+    inputContainer.style.cssText = inputContainerCSS;
+    chatBox.appendChild(inputContainer);
+
 
     // Create the input box
     var inputBox = document.createElement('textarea');
     inputBox.style.cssText = inputBoxCSS;
-    chatBox.appendChild(inputBox);
-
+    inputContainer.appendChild(inputBox);
+    //chatBox.appendChild(inputBox);
 
     // Create the send button
     var sendButton = document.createElement('button');
     sendButton.style.cssText = sendButtonCSS;
     sendButton.innerHTML = 'Send';
-    chatBox.appendChild(sendButton);
+    inputContainer.appendChild(sendButton);
+    //chatBox.appendChild(sendButton);
 
 
     // Initialize the chat
