@@ -2,6 +2,10 @@
  * 设置按键侦听类
  * 方便其它脚本调用
  * const keyHandler = new KeyHandler();
+ *
+ * 2023/6/16 上午11:46
+ * ------------------------------
+ *  add usage reference
  */
 
 class KeyHandler {
@@ -77,3 +81,47 @@ class KeyHandler {
     };
   }
 }
+
+// usage reference
+/*
+keyHandler.singleKey('k', () => {
+  console.log('k');
+});
+
+keyHandler.combinationKey(['Control', 'k'], () => {
+  console.log('Control, k');
+});
+
+keyHandler.combinationKey(['Meta', 'k'], () => {
+  console.log('Meta, k');
+    // bug : k is not released
+});
+
+keyHandler.combinationKey(['Meta', 'j'], () => {
+  console.log('Meta, j');
+});
+
+keyHandler.combinationKey(['Control','Shift', 'K'], () => {
+  console.log('Control, shift, k');
+});
+
+keyHandler.combinationKey(['Control', 'j'], () => {
+  console.log('Control, j');
+});
+
+keyHandler.doubleKey('k', 1000, () => {
+  console.log('double k');
+});
+
+keyHandler.doubleKey('j', 1000, () => {
+  console.log('double j');
+});
+
+keyHandler.comboKey(['Control', 'q'], 'k', () => {
+  console.log('leader key is ctrl+q, follow key is k');
+});
+
+keyHandler.comboKey(['Control', 'q'], 'j', () => {
+  console.log('leader key is ctrl+q, follow key is j');
+});
+*/

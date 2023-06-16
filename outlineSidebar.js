@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.2.5
+// @version      0.2.7
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -18,8 +18,12 @@
  *  2023/6/16 上午9:59
  *  ------------------------------
  *  数据互通
- *  outliner数据到聊天输入框
- *  chatlog到outliner
+ *  - [x] outliner数据到聊天输入框
+ *  - [x] chatlog到outliner
+ *  快捷键
+ *  - [x] 快速切换面板，ss
+ *  - [x] 快速启动sidebar，ctr+enter
+ *  - [] 快捷发送数据，ctr+q
  *
  *  2023/6/15 下午9:31
  *  ------------------------------
@@ -322,6 +326,11 @@
 
      // Add click event listener to the switch button
      switchButton.addEventListener('click', () => {
+         switchBetweenPanels();
+     });
+
+    // 切换面板
+    function switchBetweenPanels(){
          if (outlinerPanel.style.display === 'block') {
              outlinerPanel.style.display = 'none';
              chatPanel.style.display = 'block';
@@ -329,7 +338,7 @@
              outlinerPanel.style.display = 'block';
              chatPanel.style.display = 'none';
          }
-     });
+    }
 
     sidebar.appendChild(switchButton);
     //document.body.appendChild(switchButton);
@@ -678,11 +687,13 @@
 
     // 几个处理函数
     function chatlogToOutliner(targetText){
-            const dataSetIndex = Date.now();
-            olEditor.outlineEditor.appendNewItem(targetText, 'chatItem', dataSetIndex);
+        /*将聊天记录发送到outliner作为一个item*/
+        const dataSetIndex = Date.now();
+        olEditor.outlineEditor.appendNewItem(targetText, 'chatItem', dataSetIndex);
     }
 
     function outlinerToChatInput(targetText){
+        /* 将outliner中的item，发送到聊天输入框*/
         const chatInput = document.querySelector('.chatInput');
         const currentText = chatInput.value;
         const newText = currentText + ' ' + targetText;
@@ -698,7 +709,7 @@
             if(opacity >= 1){
                 clearInterval(interval);
             }
-        }, 50);
+        }, 100);
     }
 
 
@@ -779,6 +790,22 @@
     }
 
     const keyHandler = new KeyHandler();
+
+    // 快捷开启sidebar
+    // 第一次需要手动点击toggle button
+    keyHandler.combinationKey(['Control', 'Enter'], toggleButtonClick);
+    function toggleButtonClick(){
+        if (document.activeElement.nodeName === 'BODY'){
+            toggleSidebar.click();
+        }
+    }
+
+    // 双击s，切换面板
+    keyHandler.doubleKey('s', 200, switchBetweenPanels); 
+
+    // ctr + q, 面板之间转移数据
+    // not works
+    //keyHandler.combinationKey(['Control', 'q'], transData);
 
     // ------------------------------
     // backup
