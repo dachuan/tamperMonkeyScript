@@ -24,6 +24,7 @@
  *  - [x] 快速切换面板，ss
  *  - [x] 快速启动sidebar，ctr+enter
  *  - [] 快捷发送数据，ctr+q
+ *  - [] 快速input chatting 有bug
  *
  *  2023/6/15 下午9:31
  *  ------------------------------
@@ -330,14 +331,23 @@
      });
 
     // 切换面板
+    let activateChat = false;
     function switchBetweenPanels(){
-         if (outlinerPanel.style.display === 'block') {
-             outlinerPanel.style.display = 'none';
-             chatPanel.style.display = 'block';
-         } else {
-             outlinerPanel.style.display = 'block';
-             chatPanel.style.display = 'none';
-         }
+            if (outlinerPanel.style.display === 'block') {
+                outlinerPanel.style.display = 'none';
+                chatPanel.style.display = 'block';
+                activateChat = true;
+                // activate input in chatting
+                const chatInput = document.querySelector(".chatInput");
+                chatInput.focus();
+                setTimeout(()=>{ //清除多余的s字符
+                    chatInput.value = '';
+                }, 100);
+            } else {
+                outlinerPanel.style.display = 'block';
+                chatPanel.style.display = 'none';
+                activateChat = false;
+            }
     }
 
     sidebar.appendChild(switchButton);
@@ -801,7 +811,33 @@
     }
 
     // 双击s，切换面板
-    keyHandler.doubleKey('s', 200, switchBetweenPanels); 
+    keyHandler.doubleKey('s', 200, switchBetweenPanelsByss); 
+    function switchBetweenPanelsByss(){
+        if (document.activeElement.nodeName === 'BODY'){
+            switchBetweenPanels();
+        }
+    }
+
+
+    // 快速进入chat输入
+    // 有bug
+    //keyHandler.doubleKey('i', 200, focusChatInput); 
+    //keyHandler.singleKey('i', focusChatInput); 
+    //keyHandler.combinationKey(['Control', 'a'], focusChatInput);
+
+    function focusChatInput(){
+        console.log(activateChat);
+        if(activateChat){
+            const chatInput = document.querySelector(".chatInput");
+            chatInput.focus();
+            setTimeout(()=>{ //清除多余的s字符
+                chatInput.value = '';
+            }, 100);
+            console.log('on chatting');
+            chatInput.focus();
+        }
+    }
+
 
     // ctr + q, 面板之间转移数据
     // not works
