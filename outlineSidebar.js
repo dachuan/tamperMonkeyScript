@@ -14,7 +14,13 @@
 
 /*
  * 整合chatbox
+ *
+ *  2023/6/16 上午9:59
  *  ------------------------------
+ *  数据互通
+ *  outliner数据到聊天输入框
+ *  chatlog到outliner
+ *
  *  2023/6/15 下午9:31
  *  ------------------------------
  *  整合了switch按钮
@@ -90,6 +96,19 @@
     // :focus设置outline:none 去除焦点时候的外框
     style.innerHTML = `
         .inner-item {
+            font-size: 12px;
+            font-weight: normal;
+            opacity: 100;
+            color: #333;
+        }
+
+        .chatItem {
+            list-style-type: none;
+            padding: 10px 5px;
+            margin: 10px 10px;
+            border-left: 3px solid #b9fe2c;
+            background-color: #F5F5F5;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
             font-size: 12px;
             font-weight: normal;
             opacity: 100;
@@ -179,34 +198,6 @@
         sidebar.style.top = event.clientY - mouse.y + "px";
         sidebar.style.transform = ''; //去除transform的影响，避免位置跳跃
     }
-
-    /* 另一种drag的方法
-    let isDraggable = false;
-    let startX, startY, initialX, initialY;
-
-    sidebar.addEventListener('mousedown', (e) => {
-        if (e.target === titleContainerChat || e.target === titleContainerOutliner) {
-            isDraggable = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            initialX = sidebar.offsetLeft;
-            initialY = sidebar.offsetTop;
-        }
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (isDraggable) {
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            sidebar.style.left = `${initialX + deltaX}px`;
-            sidebar.style.top = `${initialY + deltaY}px`;
-        }
-    });
-    
-    document.addEventListener('mouseup', () => {
-        isDraggable = false;
-    });
-    */
 
     //// 创建outliner面板
 
@@ -649,6 +640,145 @@
 
     const targetNode = sidebar; // 监控sidebar中的元素变化，进行存储
     autoSave(targetNode);
+
+    /// 数据在面板之间互通
+
+    // sidebar作为侦听器
+    sidebar.addEventListener('mousedown', (event) => {
+        const insertTimeout = setTimeout(() => {
+            //console.log('long press');
+            const target = event.target;
+            const targetText = target.textContent;
+            if (target.classList.contains("inner-item") || 
+                target.classList.contains("chatItem")    ||
+                target.classList.contains("snippet")
+            ){
+                outlinerToChatInput(targetText);
+                tipOfCopy(target);
+            } else if(target.classList.contains('userLog') ||
+                target.classList.contains('botLog')
+            ){
+                chatlogToOutliner(targetText);
+                tipOfCopy(target);
+            }
+            else{
+                //console.log('not for processing');
+            }
+        }, 500); // 1000ms 长按时间
+
+        // 鼠标松开时清除定时器，避免误触发
+        sidebar.addEventListener('mouseup', () => {
+            clearTimeout(insertTimeout);
+        });
+
+        sidebar.addEventListener('mouseleave', () => {
+            clearTimeout(insertTimeout);
+        });
+    });
+
+    // 几个处理函数
+    function chatlogToOutliner(targetText){
+            const dataSetIndex = Date.now();
+            olEditor.outlineEditor.appendNewItem(targetText, 'chatItem', dataSetIndex);
+    }
+
+    function outlinerToChatInput(targetText){
+        const chatInput = document.querySelector('.chatInput');
+        const currentText = chatInput.value;
+        const newText = currentText + ' ' + targetText;
+        chatInput.value = newText;
+    }
+
+    function tipOfCopy(target){
+        // Animate 
+        var opacity = 0;
+        var interval = setInterval(function(){
+            opacity += 0.1;
+            target.style.opacity = opacity;
+            if(opacity >= 1){
+                clearInterval(interval);
+            }
+        }, 50);
+    }
+
+
+    /// key handler for shortcuts    
+    
+    class KeyHandler {
+      constructor() {
+        this.keyDown = {};
+        this.lastKey = null;
+        this.lastKeyDownTime = null;
+        this.leaderKeyDown = false;
+        this.leaderKey = [];
+    
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        document.addEventListener('keyup', (e) => this.handleKeyUp(e));
+      }
+    
+      handleKeyDown(e) {
+        this.keyDown[e.key] = true;
+    
+        if (this.leaderKeyDown) {
+          this.checkLeaderFollowKey(e.key);
+        }
+      }
+    
+      handleKeyUp(e) {
+        this.keyDown[e.key] = false;
+      }
+    
+      singleKey(key, callback) {
+        document.addEventListener('keydown', (e) => {
+          if (e.key === key) {
+            callback();
+            //console.log(this.keyDown);
+          }
+        });
+      }
+    
+      combinationKey(keys, callback) {
+        document.addEventListener('keydown', (e) => {
+          const allKeysPressed = keys.every((key) => this.keyDown[key]);
+          if (allKeysPressed) {
+            callback();
+            //console.log(this.keyDown);
+          }
+        });
+      }
+    
+      doubleKey(key, interval, callback) {
+        document.addEventListener('keydown', (e) => {
+          if (e.key === key) {
+            const currentTime = new Date().getTime();
+            if (this.lastKey === key && currentTime - this.lastKeyDownTime < interval) {
+              callback();
+            }
+            this.lastKey = key;
+            this.lastKeyDownTime = currentTime;
+          }
+        });
+      }
+    
+      comboKey(leaderKeys, followKey, callback) {
+        this.leaderKey = leaderKeys;
+        document.addEventListener('keydown', (e) => {
+          const allKeysPressed = leaderKeys.every((key) => this.keyDown[key]);
+          if (allKeysPressed) {
+            this.leaderKeyDown = true;
+          }
+        });
+    
+        this.checkLeaderFollowKey = (key) => {
+          if (key === followKey) {
+            callback();
+          }
+          this.leaderKeyDown = false;
+        };
+      }
+    }
+
+    const keyHandler = new KeyHandler();
 
     // ------------------------------
     // backup

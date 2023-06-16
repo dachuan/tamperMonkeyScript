@@ -1,4 +1,8 @@
 /*
+ * 2023/6/16 上午11:21
+ * ------------------------------
+ *  add class for userlog and botlog
+ *
  * 2023/6/13 下午2:11
  * ------------------------------
  *  simply UI component of chat with GPT
@@ -112,6 +116,7 @@ function chatter(){
     // Create the input box
     var inputBox = document.createElement('textarea');
     inputBox.style.cssText = inputBoxCSS;
+    inputBox.classList.add('chatInput');
     inputContainer.appendChild(inputBox);
     //chatBox.appendChild(inputBox);
 
@@ -136,6 +141,7 @@ function chatter(){
 
             // add span for text wrap
             var userText = document.createElement('span');
+            userText.classList.add('userLog');
             userText.innerHTML = userInput;
             userText.style.cssText = userTextCSS;
             userMessage.appendChild(userText);
@@ -147,6 +153,7 @@ function chatter(){
 
              // add span for text wrap
             var botText = document.createElement('span');
+            botText.classList.add('botLog');
             botText.style.cssText = botTextCSS;
             botMessage.appendChild(botText);
             chatLog.appendChild(botMessage);
