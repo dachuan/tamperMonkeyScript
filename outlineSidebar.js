@@ -14,6 +14,10 @@
 
 /*
  * 整合chatbox
+ *  2023/6/17 下午2:05
+ *  ------------------------------
+ *  调整导出时候的大纲缩进
+ *  长按item同时拷贝到系统剪切板
  *
  *  2023/6/16 上午9:59
  *  ------------------------------
@@ -239,7 +243,8 @@
 
         // add all items in outliner
         var outlinerText = olEditor.outlineEditor.exportAllItems();
-        sidebarText += outlinerText;
+        var tabbedText = outlinerText.split('\n').map(line => '\t' + line).join('\n'); // 行首缩进，并于导出大纲分级
+        sidebarText += tabbedText;
 
         navigator.clipboard.writeText(sidebarText);
         tipOfCopy();
@@ -339,9 +344,10 @@
                 activateChat = true;
                 // activate input in chatting
                 const chatInput = document.querySelector(".chatInput");
+                const chatInputText = chatInput.value;
                 chatInput.focus();
                 setTimeout(()=>{ //清除多余的s字符
-                    chatInput.value = '';
+                    chatInput.value = chatInputText;
                 }, 100);
             } else {
                 outlinerPanel.style.display = 'block';
@@ -673,12 +679,15 @@
                 target.classList.contains("snippet")
             ){
                 outlinerToChatInput(targetText);
-                tipOfCopy(target);
+                tipOfTransferData(target);
+                // save to clipboard
+                navigator.clipboard.writeText(targetText);
             } else if(target.classList.contains('userLog') ||
                 target.classList.contains('botLog')
             ){
                 chatlogToOutliner(targetText);
-                tipOfCopy(target);
+                tipOfTransferData(target);
+                navigator.clipboard.writeText(targetText);
             }
             else{
                 //console.log('not for processing');
@@ -710,7 +719,7 @@
         chatInput.value = newText;
     }
 
-    function tipOfCopy(target){
+    function tipOfTransferData(target){
         // Animate 
         var opacity = 0;
         var interval = setInterval(function(){
