@@ -1,4 +1,9 @@
 /*
+ * 2023/6/18 上午10:57
+ * ------------------------------
+ *  使用GM_xmlHttpRequest 替代fetch
+ *  规避跨域问题
+ *
  * 2023/6/16 上午11:21
  * ------------------------------
  *  add class for userlog and botlog
@@ -195,7 +200,76 @@ function chatter(){
         //    ],
         //    stream: true,
         //};
-    
+
+
+        GM_xmlhttpRequest({
+            method: 'POST',
+            url: API_URL,
+            headers: headers,
+            data: JSON.stringify(requestBody),
+            responseType: 'arraybuffer',
+            onload: function(response) {
+                // 将 ArrayBuffer 转换为 ReadableStream
+                const stream = new ReadableStream({
+                    start(controller) {
+                        controller.enqueue(new Uint8Array(response.response));
+                        controller.close();
+                    }
+                });
+        
+                const reader = stream.getReader();
+                const decoder = new TextDecoder();
+                let partialData = '';
+                let response_str = '';
+        
+                reader.read().then(function processText({ done, value }) {
+                    if (done) {
+                        console.log('Stream finished');
+                        return;
+                    }
+        
+                    // Convert Uint8Array to string
+                    const chunk = decoder.decode(value, { stream: true });
+        
+                    // Split string into lines
+                    const lines = (partialData + chunk).split('\n');
+                    partialData = lines.pop();
+        
+                    lines.forEach(line => {
+                        const match = line.match(/"content":"([^"]*)"/);
+                        if (match) {
+                            //console.log(match[1]);
+                            response_str += match[1];
+                            // render botText
+                            responseSpan.innerHTML = response_str;
+                            // 随文字下拉
+                            chatLog.scrollTop = chatLog.scrollHeight;
+                        }
+                    });
+        
+                    // Read next chunk of data
+                    reader.read().then(processText);
+                });
+            }
+        });
+        }
+        
+    // Add event listener to input box for "Enter" key
+    inputBox.addEventListener('keydown', function(event) {
+        if (event.keyCode === 13 && !event.shiftKey) {
+            event.preventDefault();
+            sendButton.click();
+        }
+    });
+
+    ele.chatBox = chatBox;
+
+    return ele
+}
+
+/*backup*/
+//------------------------------
+        /* fetch not works in CSP
         fetch(API_URL, {
             method: 'POST',
             headers: headers,
@@ -235,17 +309,4 @@ function chatter(){
                 reader.read().then(processText);
               });
             });
-        }
-        
-    // Add event listener to input box for "Enter" key
-    inputBox.addEventListener('keydown', function(event) {
-        if (event.keyCode === 13 && !event.shiftKey) {
-            event.preventDefault();
-            sendButton.click();
-        }
-    });
-
-    ele.chatBox = chatBox;
-
-    return ele
-}
+            */

@@ -9,11 +9,16 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=workflowy.com
 // @require      file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/localAssets/outliner.js
 // @require      file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/localAssets/chatter.js
-// @grant        none
+// @connect      openai.api2d.net
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 /*
  * 整合chatbox
+ *  2023/6/18 上午10:59
+ *  ------------------------------
+ *  解决CSP问题，@conect和@grant
+ *
  *  2023/6/17 下午2:05
  *  ------------------------------
  *  调整导出时候的大纲缩进
@@ -93,7 +98,7 @@
 (function() {
     'use strict';
 
-    console.log('chat with GPT');
+    console.log('csp');
 
     /* styel set */
     //---------start---------------------
