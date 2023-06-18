@@ -183,7 +183,7 @@ function outliner() {
     // Add restoreData method to the outlineEditor element
     // 重置数据
      outlineEditor.restoreData = function () {
-        console.log('restore the outliner.');
+        //console.log('restore the outliner.');
         const storageKey = 'outlinerData_' + window.location.href;
         const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
         //console.log("loading data: ", data);

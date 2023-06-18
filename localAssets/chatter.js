@@ -3,6 +3,8 @@
  * ------------------------------
  *  使用GM_xmlHttpRequest 替代fetch
  *  规避跨域问题
+ *  GM_xmlhttpRequest的文档和sample都含糊
+ *  通过去掉它的状态限制条件达成
  *
  * 2023/6/16 上午11:21
  * ------------------------------
@@ -201,58 +203,47 @@ function chatter(){
         //    stream: true,
         //};
 
-
         GM_xmlhttpRequest({
             method: 'POST',
-            url: API_URL,
             headers: headers,
+            url: API_URL,
             data: JSON.stringify(requestBody),
-            responseType: 'arraybuffer',
-            onload: function(response) {
-                // 将 ArrayBuffer 转换为 ReadableStream
-                const stream = new ReadableStream({
-                    start(controller) {
-                        controller.enqueue(new Uint8Array(response.response));
-                        controller.close();
-                    }
-                });
-        
-                const reader = stream.getReader();
+            responseType: "stream",
+            onloadstart: async function(response) { // onload是完全加载完毕,不能用onload
+                const reader = response.response.getReader();
                 const decoder = new TextDecoder();
                 let partialData = '';
                 let response_str = '';
-        
-                reader.read().then(function processText({ done, value }) {
-                    if (done) {
-                        console.log('Stream finished');
-                        return;
+
+                while (true) {
+                    const { done, value} = await reader.read(); // value is Uint8Array
+                    if (value) {
+                        const chunk = decoder.decode(value, { stream: true });
+
+                        // Split string into lines
+                        const lines = (partialData + chunk).split('\n');
+                        partialData = lines.pop();
+    
+                        lines.forEach(line => {
+                            const match = line.match(/"content":"([^"]*)"/);
+                            if (match) {
+                                console.log(match[1]);
+                                response_str += match[1];
+                                // render botText
+                                responseSpan.innerHTML = response_str;
+                                // 随文字下拉
+                                chatLog.scrollTop = chatLog.scrollHeight;
+                            }
+                        });
                     }
-        
-                    // Convert Uint8Array to string
-                    const chunk = decoder.decode(value, { stream: true });
-        
-                    // Split string into lines
-                    const lines = (partialData + chunk).split('\n');
-                    partialData = lines.pop();
-        
-                    lines.forEach(line => {
-                        const match = line.match(/"content":"([^"]*)"/);
-                        if (match) {
-                            //console.log(match[1]);
-                            response_str += match[1];
-                            // render botText
-                            responseSpan.innerHTML = response_str;
-                            // 随文字下拉
-                            chatLog.scrollTop = chatLog.scrollHeight;
-                        }
-                    });
-        
-                    // Read next chunk of data
-                    reader.read().then(processText);
-                });
-            }
+
+                    if (done) break;
+                }
+                console.log('done');
+            },
         });
-        }
+
+    }
         
     // Add event listener to input box for "Enter" key
     inputBox.addEventListener('keydown', function(event) {
@@ -269,8 +260,8 @@ function chatter(){
 
 /*backup*/
 //------------------------------
-        /* fetch not works in CSP
-        fetch(API_URL, {
+        /* 
+        fetch(API_URL, {     //fetch not works in CSP
             method: 'POST',
             headers: headers,
             body: JSON.stringify(requestBody),
@@ -310,3 +301,4 @@ function chatter(){
               });
             });
             */
+

@@ -840,14 +840,14 @@
     //keyHandler.combinationKey(['Control', 'a'], focusChatInput);
 
     function focusChatInput(){
-        console.log(activateChat);
+        //console.log(activateChat);
         if(activateChat){
             const chatInput = document.querySelector(".chatInput");
             chatInput.focus();
             setTimeout(()=>{ //清除多余的s字符
                 chatInput.value = '';
             }, 100);
-            console.log('on chatting');
+            //console.log('on chatting');
             chatInput.focus();
         }
     }
