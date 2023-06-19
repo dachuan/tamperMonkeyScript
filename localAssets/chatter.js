@@ -1,4 +1,8 @@
 /*
+ * 2023/6/19 上午10:57
+ * ------------------------------
+ *  处理botlog中的换行问题
+ *
  * 2023/6/18 上午10:57
  * ------------------------------
  *  使用GM_xmlHttpRequest 替代fetch
@@ -91,13 +95,14 @@ function chatter(){
     `;
 
 
+    //white-space: pre-wrap;
     const botTextCSS = `
         background-color :  #eeeeee;
         color : #000;
         font-size : 14px;
         display : inline-block;
         text-align : left;
-        white-space: pre-wrap;
+        white-space: pre-line;
         user-select: text;
         cursor: text;
     `;
@@ -227,8 +232,13 @@ function chatter(){
                         lines.forEach(line => {
                             const match = line.match(/"content":"([^"]*)"/);
                             if (match) {
-                                console.log(match[1]);
-                                response_str += match[1];
+                                //console.log(match[1]);
+                                // 处理\n 为&#10
+                                let w = match[1];
+                                if (/\\n/.test(match[1])) {
+                                  w = w.replace(/\\n/g, "&#10;");
+                                }
+                                response_str += w;
                                 // render botText
                                 responseSpan.innerHTML = response_str;
                                 // 随文字下拉
