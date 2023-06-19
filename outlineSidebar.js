@@ -15,6 +15,10 @@
 
 /*
  * 整合chatbox
+ *  2023/6/19 下午8:53
+ *  ------------------------------
+ *  修改长按为双击作为数据互通操作
+ *
  *  2023/6/18 上午10:59
  *  ------------------------------
  *  解决CSP问题，@conect和@grant
@@ -674,6 +678,31 @@
     /// 数据在面板之间互通
 
     // sidebar作为侦听器
+    // 长按数据互通 改
+    // 双击互通
+    sidebar.addEventListener('dblclick', (event) => {
+        const target = event.target;
+        const targetText = target.textContent;
+        if (target.classList.contains("inner-item") || 
+            target.classList.contains("chatItem")    ||
+            target.classList.contains("snippet")
+        ){
+            outlinerToChatInput(targetText);
+            tipOfTransferData(target);
+            // save to clipboard
+            navigator.clipboard.writeText(targetText);
+        } else if(target.classList.contains('userLog') ||
+            target.classList.contains('botLog')
+        ){
+            chatlogToOutliner(targetText);
+            tipOfTransferData(target);
+            navigator.clipboard.writeText(targetText);
+        }
+        else{
+            //console.log('not for processing');
+        }
+    });
+    /* 长按
     sidebar.addEventListener('mousedown', (event) => {
         const insertTimeout = setTimeout(() => {
             //console.log('long press');
@@ -707,7 +736,7 @@
         sidebar.addEventListener('mouseleave', () => {
             clearTimeout(insertTimeout);
         });
-    });
+    });*/
 
     // 几个处理函数
     function chatlogToOutliner(targetText){

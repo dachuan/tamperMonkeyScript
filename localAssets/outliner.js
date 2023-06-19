@@ -1,4 +1,8 @@
 /*
+ *  2023/6/19 下午8:52
+ *  ------------------------------
+ *  暂时屏蔽双击折叠功能
+ *
  *  2023/6/15 下午9:09
  *  ------------------------------
  *  新增加item，滚动到最后
@@ -392,6 +396,8 @@ function outliner() {
     //------------------------------
 
     // Add a dblclick event listener to toggle fold and unfold
+    // 频率不高，双击另作他用
+    /*
     outlineEditor.addEventListener('dblclick', (e) => {
         const currentNode = e.target;
         if (currentNode.tagName === 'LI') {
@@ -402,7 +408,7 @@ function outliner() {
                 outlineEditor.unfold(currentNode);
             }
         }
-    });
+    });*/
 
     // Handle keyboard events for indent, outdent, and new items
     outlineEditor.addEventListener('keydown', (e) => {
