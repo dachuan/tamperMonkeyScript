@@ -1,4 +1,9 @@
 /*
+ * 2023/6/20 下午4:54
+ * ------------------------------
+ *  聊天上下文支持
+ *  清除上下文支持
+ *
  * 2023/6/19 上午10:57
  * ------------------------------
  *  处理botlog中的换行问题
@@ -24,6 +29,8 @@ function chatter(){
 
     console.log('from chatbox module.');
     const ele = {};
+
+
 
     const chatBoxCSS = `
         display : flex;
@@ -66,6 +73,20 @@ function chatter(){
         //color: white;
         //background-color: darkcyan;
         //height: 90%;
+    `;
+
+    const clearButtonCSS = `
+        width: 10%;
+        //margin-right : 15px;
+        //border: lightblue;
+        //color: white;
+        //background-color: darkcyan;
+        //height: 90%;
+    `;
+
+    const segCSS = `
+        font-size : 10px;
+        text-align: center;
     `;
 
     const userMessageCSS = `
@@ -124,6 +145,11 @@ function chatter(){
     inputContainer.style.cssText = inputContainerCSS;
     chatBox.appendChild(inputContainer);
 
+    // Create the clear button
+    var clearButton = document.createElement('button');
+    clearButton.style.cssText = clearButtonCSS;
+    clearButton.innerHTML = '♲';
+    inputContainer.appendChild(clearButton);
 
     // Create the input box
     var inputBox = document.createElement('textarea');
@@ -139,9 +165,27 @@ function chatter(){
     inputContainer.appendChild(sendButton);
     //chatBox.appendChild(sendButton);
 
+    // Clear chat history by clearButton
+    clearButton.addEventListener('click', function() {
+        clearChatHistory();
 
-    // Initialize the chat
-    var chatHistory = [];
+        // create a segment div
+        var clearSeg = document.createElement('div');
+        clearSeg.style.cssText = segCSS;
+        clearSeg.innerHTML ='--------------new chat----------------';
+        chatLog.appendChild(clearSeg);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    });
+
+    // initial messages
+    let messages = [];
+    let sys_message = {"role": "system", "content": "Always think in English, but reply in Chinese."};
+    messages.push(sys_message);
+
+    function clearChatHistory(){
+        messages = [];
+        messages.push(sys_message);
+    }
 
     // Add event listener to send button
     sendButton.addEventListener('click', function() {
@@ -181,6 +225,7 @@ function chatter(){
         }
     });
 
+
     // query from GPT in streaming data
     function streamResponse(question, responseSpan) {
         const API_KEY = 'fk189028-nLqoall7vcbQ65xUXwqa3s7x8mgE9W7D';
@@ -190,11 +235,14 @@ function chatter(){
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${API_KEY}`,
         };
+
+        // push message
+        messages.push({ role: "user", content: question });
     
         // 3.5 turbo
         const requestBody = {
             model: 'gpt-3.5-turbo',
-            messages: [{ role: "user", content: question }],
+            messages: messages,
             stream: true,
         };
 
@@ -249,10 +297,13 @@ function chatter(){
 
                     if (done) break;
                 }
-                console.log('done');
+                //console.log('done');
+                if (response_str){ // push assistant message
+                    messages.push({'role': 'assistant', 'content': response_str});
+                    //console.log(messages);
+                }
             },
         });
-
     }
         
     // Add event listener to input box for "Enter" key
