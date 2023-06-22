@@ -1,24 +1,75 @@
 // ==UserScript==
 // @name         outliner sidebar
 // @namespace    http://tampermonkey.net/
-// @version      0.2.3
+// @version      0.2.7
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
 // @exclude      /^https://.*?126.com/*/
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=workflowy.com
 // @require      file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/localAssets/outliner.js
-// @grant        none
+// @require      file:///Users/dcthe/DC/Study/icoding/tamperMonkeyScript/localAssets/chatter.js
+// @connect      openai.api2d.net
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 /*
+ * 易用性调整
+ *  2023/6/21 下午3:01
+ *  ------------------------------
+ *  可以摘录gpt的回答关键文字
+ *
+ * 整合chatbox
+ *  2023/6/19 下午8:53
+ *  ------------------------------
+ *  修改长按为双击作为数据互通操作
+ *
+ *  2023/6/18 上午10:59
+ *  ------------------------------
+ *  解决CSP问题，@conect和@grant
+ *
+ *  2023/6/17 下午2:05
+ *  ------------------------------
+ *  调整导出时候的大纲缩进
+ *  长按item同时拷贝到系统剪切板
+ *
+ *  2023/6/16 上午9:59
+ *  ------------------------------
+ *  数据互通
+ *  - [x] outliner数据到聊天输入框
+ *  - [x] chatlog到outliner
+ *  快捷键
+ *  - [x] 快速切换面板，ss
+ *  - [x] 快速启动sidebar，ctr+enter
+ *  - [] 快捷发送数据，ctr+q
+ *  - [] 快速input chatting 有bug
+ *
+ *  2023/6/15 下午9:31
+ *  ------------------------------
+ *  整合了switch按钮
+ *  拖动及文本选择等
+ *  样式初步成型
+ *
+ *  ------------------------------
+ *  2023/6/13 下午1:16
+ *  ------------------------------
+ *  将chatWithGPT整合
+ *
  * 改造成outline
+ *  ------------------------------
+ *  2023/6/11 下午1:29
+ *  ------------------------------
+ *  autoSave添加一个 blur 事件侦听器
+ *  用于在焦点离开时自动保存
+ *  避免最后一个item丢失
+ *
  *  ------------------------------
  *  2023/6/10 下午5:31
  *  ------------------------------
  *  改进数据存储机制
- *  当sidebar元素有变化时
- *  自动保存
+ *  - 当sidebar元素有变化时
+ *  - 自动保存
+ *  sidebar可拖动
  *
  *  ------------------------------
  *  2023/6/9 下午3:52
@@ -56,19 +107,51 @@
 (function() {
     'use strict';
 
-    console.log('newly fixed.');
+    console.log('csp');
 
+    /* styel set */
+    //---------start---------------------
     // 创建一个 <style> 元素
     const style = document.createElement('style');
     style.type = 'text/css';
 
     // 设置 CSS 规则
+    // :focus设置outline:none 去除焦点时候的外框
     style.innerHTML = `
         .inner-item {
             font-size: 12px;
             font-weight: normal;
             opacity: 100;
             color: #333;
+        }
+
+        .chatItem {
+            list-style-type: none;
+            padding: 10px 5px;
+            margin: 10px 10px;
+            border-left: 3px solid #b9fe2c;
+            background-color: #F5F5F5;
+            box-shadow: 0 0 3px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+            font-weight: normal;
+            opacity: 100;
+            color: #333;
+        }
+
+        .outliner-container {
+            height: 420px;
+        }
+
+        .outliner-container > ul:focus {
+            outline: none;
+        }
+
+        textarea:focus {
+            outline: none;
+        }
+
+        .chatLog:focus {
+            outline: none;
         }
 
         .snippet {
@@ -82,27 +165,31 @@
             font-weight: normal;
             opacity: 100;
             color: #333;
-        }
-    `;
+        }`;
 
     // 将 <style> 元素添加到页面的 <head> 中
     document.head.appendChild(style);
+    //--------end----------------------
 
-    // 初始化outliner，存储数据
-    const olEditor = outliner();
+    /* 初始化数据*/
+    //---------start---------------------
+    const olEditor = outliner(); // 初始化outliner, required
+    const chatBox = chatter().chatBox; // 初始化chatbox, required
     const webStorage = annotationStorage();
+    let runScript = false; // 脚本开关
+    //--------end----------------------
 
-    // 脚本开关
-    let runScript = false;
+    /* sidebar 创建 */
+    //---------start---------------------
 
-    // 创建一个侧边栏容器
+    //// 创建一个侧边栏容器
     const sidebar = document.createElement('div');
     sidebar.style.cssText = `
         position: fixed;
         right: 0;
         top: 50%;
         width: 400px;
-        height: 300px;
+        height: 450px;
         background: white;
         border-left: 1px solid #ccc;
         overflow-y: auto;
@@ -114,20 +201,51 @@
         z-index: -9999;
     `;
 
-    // Make the title fixed at the top of the sidebar
-    const titleContainer = document.createElement('div');
-    titleContainer.textContent = 'Quotations -------------------- click save all';
-    titleContainer.style.cssText = `
+    // draggable
+    sidebar.draggable="true";
+    let mouse = { x: 0, y: 0 };
+
+    // 防止子元素不能选择
+
+    sidebar.ondragstart = function() {
+        // 记录鼠标与sidebar之间的距离
+        mouse = {
+            x: event.offsetX,
+            y: event.offsetY
+        }
+    }
+    // 拖拽结束
+    sidebar.ondragend = function() {
+        // sidebar的位置 = 鼠标与页面之间的距离 - 鼠标与sidebar之间的距离
+        sidebar.style.left = event.clientX - mouse.x + "px";
+        sidebar.style.top = event.clientY - mouse.y + "px";
+        sidebar.style.transform = ''; //去除transform的影响，避免位置跳跃
+    }
+
+    //// 创建outliner面板
+
+    // 容器
+    const outlinerPanel = document.createElement('div');
+    outlinerPanel.style.cssText = `
+       display: 'block'; 
+    `;
+
+    // Make the title fixed at the top of the outlinerPanel
+    const titleContainerOutliner = document.createElement('div');
+    titleContainerOutliner.textContent = 'Quotations';
+    titleContainerOutliner.style.cssText = `
         position: sticky;
         top: 0;
         font-size: 14px;
         font-weight: bold;
+        color: #000;
         background-color: #42bbf4;
+        text-align: center;
     `;
 
     // 点击title复制所有文本条目
     // 同时将数据保存到local storage
-    titleContainer.addEventListener('click', function(event) {
+    titleContainerOutliner.addEventListener('click', function(event) {
         var url = window.location.origin + window.location.pathname;
         var title = document.title;
         var linkage = `[${title}](${url})`;
@@ -139,7 +257,8 @@
 
         // add all items in outliner
         var outlinerText = olEditor.outlineEditor.exportAllItems();
-        sidebarText += outlinerText;
+        var tabbedText = outlinerText.split('\n').map(line => '\t' + line).join('\n'); // 行首缩进，并于导出大纲分级
+        sidebarText += tabbedText;
 
         navigator.clipboard.writeText(sidebarText);
         tipOfCopy();
@@ -148,8 +267,11 @@
         webStorage.saveAllAnnotations();
     });
 
-    sidebar.appendChild(titleContainer);
-    sidebar.appendChild(olEditor);
+    // 添加到sidebar
+    document.body.appendChild(sidebar);
+    sidebar.appendChild(outlinerPanel);
+    outlinerPanel.appendChild(titleContainerOutliner);
+    outlinerPanel.appendChild(olEditor);
 
     // copied 消息提示
     function tipOfCopy(){
@@ -157,7 +279,7 @@
         const tip = document.createElement('div');
         tip.textContent = 'All quotations copied.';
         tip.style.cssText = `
-            position: fixed;
+            position: absolute;
             top: 50%;
             left: 50%;
             transition: opacity 1s ease-in-out;
@@ -166,7 +288,7 @@
         `;
 
         // 插入到文档中
-        document.body.appendChild(tip);
+        sidebar.appendChild(tip);
 
         // 1 秒后隐藏提示
         setTimeout(() => {
@@ -174,10 +296,85 @@
         }, 1000);
     }
 
-    // 添加侧边栏到页面
-    document.body.appendChild(sidebar);
+    //// 创建chatbox面板
+    
+    const chatPanel = document.createElement('div');
+    chatPanel.style.cssText = `
+       display: 'none', 
+    `;
 
-    // 添加一个控制sidebar出现的按钮
+    // Make the title fixed at the top of the chatPanel
+    const titleContainerChat = document.createElement('div');
+    titleContainerChat.textContent = 'chat with GPT';
+    titleContainerChat.style.cssText = `
+        position: sticky;
+        top: 0;
+        font-size: 14px;
+        font-weight: bold;
+        color: #000;
+        background-color: #42bbf4; // #bb42f4;
+        text-align: center;
+    `;
+
+    // 添加到sidebar
+    sidebar.appendChild(chatPanel);
+    chatPanel.appendChild(titleContainerChat);
+    chatPanel.appendChild(chatBox);
+
+    // 初始两个panel的显示设置
+    outlinerPanel.style.display = 'block';
+    chatPanel.style.display = 'none';
+
+    //// 添加一个面板切换的按钮
+    const switchButton = document.createElement('button');
+    switchButton.textContent = 's';
+    switchButton.style.cssText = `
+        position: absolute;
+        top: 6px;
+        left: 6px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: #111;
+        color: white;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        z-index: 9999;
+        font-size: 16px;
+    `;
+
+     // Add click event listener to the switch button
+     switchButton.addEventListener('click', () => {
+         switchBetweenPanels();
+     });
+
+    // 切换面板
+    let activateChat = false;
+    function switchBetweenPanels(){
+            if (outlinerPanel.style.display === 'block') {
+                outlinerPanel.style.display = 'none';
+                chatPanel.style.display = 'block';
+                activateChat = true;
+                // activate input in chatting
+                const chatInput = document.querySelector(".chatInput");
+                const chatInputText = chatInput.value;
+                chatInput.focus();
+                setTimeout(()=>{ //清除多余的s字符
+                    chatInput.value = chatInputText;
+                }, 100);
+            } else {
+                outlinerPanel.style.display = 'block';
+                chatPanel.style.display = 'none';
+                activateChat = false;
+            }
+    }
+
+    sidebar.appendChild(switchButton);
+    //document.body.appendChild(switchButton);
+
+
+    //// 添加一个控制sidebar出现的按钮
     const toggleSidebar = document.createElement('button');
     toggleSidebar.textContent = '+';
     toggleSidebar.style.cssText = `
@@ -214,7 +411,12 @@
         if (olEditor.outlineEditor.children.length === 0) {
             const startItem = document.createElement('li');
             startItem.classList.add('starter');
-            startItem.textContent = '\u200B' + startTime; // Zero-width space
+            startItem.textContent = startTime; // Zero-width space
+            //startItem.textContent = '\u200B' + startTime; // Zero-width space
+            startItem.style.cssText =`
+               text-align: right; 
+               font-size: 10px;
+            `;
             olEditor.outlineEditor.appendChild(startItem);
             olEditor.outlineEditor.lastActiveNode = startItem;
 
@@ -259,7 +461,14 @@
             // 清除选区，避免重复添加
             window.getSelection().removeAllRanges();
             // 滚动到最后
-            sidebar.scrollTop = sidebar.scrollHeight;
+            //sidebar.scrollTop = sidebar.scrollHeight;
+        }
+
+        // chatbox中的文字处理
+        if (selectedText.length > 0 && chatBox.contains(target) && runScript) {
+            const dataSetIndex = Date.now();
+            olEditor.outlineEditor.appendNewItem(selectedText, 'chatItem', dataSetIndex);
+            tipOfTransferData(target);
         }
     });
 
@@ -443,19 +652,17 @@
         return webStorage
     }
 
-    // 监控sidebar中的元素变化，进行存储
-    const targetNode = sidebar;
 
     function autoSave(targetNode){
         // 回调函数，当监控行为观察到变化时执行
         const callback_save = function(mutationsList, observer) {
             webStorage.saveAllAnnotations();
-            console.log('save all data to local storage.');
+            //console.log('save all data to local storage.');
         };
         
         // 观察器的配置（需要观察哪些变动）
         const config_change = {
-            attributes: true,
+            //attributes: true,
             childList: true,
             subtree: true
         };
@@ -466,12 +673,230 @@
         // 用配置文件开始观察目标节点
         observer_save.observe(targetNode, config_change);
         
+        // 添加一个 blur 事件侦听器，用于在焦点离开时自动保存
+        const onBlur = function (event) {
+            webStorage.saveAllAnnotations();
+            //console.log('save all data to local storage on blur.');
+        };
+        targetNode.addEventListener('blur', onBlur, true);
+
         // 之后，你可以使用下面的代码停止观察
         // observer.disconnect();
     }
 
+    const targetNode = sidebar; // 监控sidebar中的元素变化，进行存储
     autoSave(targetNode);
+
+    /// 数据在面板之间互通
+
+    // sidebar作为侦听器
+    // 长按数据互通 改
+    // 双击互通
+    sidebar.addEventListener('dblclick', (event) => {
+        const target = event.target;
+        const targetText = target.textContent;
+        if (target.classList.contains("inner-item") || 
+            target.classList.contains("chatItem")    ||
+            target.classList.contains("snippet")
+        ){
+            outlinerToChatInput(targetText);
+            tipOfTransferData(target);
+            // save to clipboard
+            navigator.clipboard.writeText(targetText);
+        } else if(target.classList.contains('userLog') ||
+            target.classList.contains('botLog')
+        ){
+            chatlogToOutliner(targetText);
+            tipOfTransferData(target);
+            navigator.clipboard.writeText(targetText);
+        }
+        else{
+            //console.log('not for processing');
+        }
+    });
+    /* 长按
+    sidebar.addEventListener('mousedown', (event) => {
+        const insertTimeout = setTimeout(() => {
+            //console.log('long press');
+            const target = event.target;
+            const targetText = target.textContent;
+            if (target.classList.contains("inner-item") || 
+                target.classList.contains("chatItem")    ||
+                target.classList.contains("snippet")
+            ){
+                outlinerToChatInput(targetText);
+                tipOfTransferData(target);
+                // save to clipboard
+                navigator.clipboard.writeText(targetText);
+            } else if(target.classList.contains('userLog') ||
+                target.classList.contains('botLog')
+            ){
+                chatlogToOutliner(targetText);
+                tipOfTransferData(target);
+                navigator.clipboard.writeText(targetText);
+            }
+            else{
+                //console.log('not for processing');
+            }
+        }, 500); // 1000ms 长按时间
+
+        // 鼠标松开时清除定时器，避免误触发
+        sidebar.addEventListener('mouseup', () => {
+            clearTimeout(insertTimeout);
+        });
+
+        sidebar.addEventListener('mouseleave', () => {
+            clearTimeout(insertTimeout);
+        });
+    });*/
+
+    // 几个处理函数
+    function chatlogToOutliner(targetText){
+        /*将聊天记录发送到outliner作为一个item*/
+        const dataSetIndex = Date.now();
+        olEditor.outlineEditor.appendNewItem(targetText, 'chatItem', dataSetIndex);
+    }
+
+    function outlinerToChatInput(targetText){
+        /* 将outliner中的item，发送到聊天输入框*/
+        const chatInput = document.querySelector('.chatInput');
+        const currentText = chatInput.value;
+        const newText = currentText + ' ' + targetText;
+        chatInput.value = newText;
+    }
+
+    function tipOfTransferData(target){
+        // Animate 
+        var opacity = 0;
+        var interval = setInterval(function(){
+            opacity += 0.1;
+            target.style.opacity = opacity;
+            if(opacity >= 1){
+                clearInterval(interval);
+            }
+        }, 100);
+    }
+
+
+    /// key handler for shortcuts    
     
+    class KeyHandler {
+      constructor() {
+        this.keyDown = {};
+        this.lastKey = null;
+        this.lastKeyDownTime = null;
+        this.leaderKeyDown = false;
+        this.leaderKey = [];
+    
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        document.addEventListener('keyup', (e) => this.handleKeyUp(e));
+      }
+    
+      handleKeyDown(e) {
+        this.keyDown[e.key] = true;
+    
+        if (this.leaderKeyDown) {
+          this.checkLeaderFollowKey(e.key);
+        }
+      }
+    
+      handleKeyUp(e) {
+        this.keyDown[e.key] = false;
+      }
+    
+      singleKey(key, callback) {
+        document.addEventListener('keydown', (e) => {
+          if (e.key === key) {
+            callback();
+            //console.log(this.keyDown);
+          }
+        });
+      }
+    
+      combinationKey(keys, callback) {
+        document.addEventListener('keydown', (e) => {
+          const allKeysPressed = keys.every((key) => this.keyDown[key]);
+          if (allKeysPressed) {
+            callback();
+            //console.log(this.keyDown);
+          }
+        });
+      }
+    
+      doubleKey(key, interval, callback) {
+        document.addEventListener('keydown', (e) => {
+          if (e.key === key) {
+            const currentTime = new Date().getTime();
+            if (this.lastKey === key && currentTime - this.lastKeyDownTime < interval) {
+              callback();
+            }
+            this.lastKey = key;
+            this.lastKeyDownTime = currentTime;
+          }
+        });
+      }
+    
+      comboKey(leaderKeys, followKey, callback) {
+        this.leaderKey = leaderKeys;
+        document.addEventListener('keydown', (e) => {
+          const allKeysPressed = leaderKeys.every((key) => this.keyDown[key]);
+          if (allKeysPressed) {
+            this.leaderKeyDown = true;
+          }
+        });
+    
+        this.checkLeaderFollowKey = (key) => {
+          if (key === followKey) {
+            callback();
+          }
+          this.leaderKeyDown = false;
+        };
+      }
+    }
+
+    const keyHandler = new KeyHandler();
+
+    // 快捷开启sidebar
+    // 第一次需要手动点击toggle button
+    keyHandler.combinationKey(['Control', 'Enter'], toggleButtonClick);
+    function toggleButtonClick(){
+        if (document.activeElement.nodeName === 'BODY'){
+            toggleSidebar.click();
+        }
+    }
+
+    // 双击s，切换面板
+    keyHandler.doubleKey('s', 200, switchBetweenPanelsByss); 
+    function switchBetweenPanelsByss(){
+        if (document.activeElement.nodeName === 'BODY'){
+            switchBetweenPanels();
+        }
+    }
+
+
+    // 快速进入chat输入
+    // 有bug
+    //keyHandler.doubleKey('i', 200, focusChatInput); 
+    //keyHandler.singleKey('i', focusChatInput); 
+    //keyHandler.combinationKey(['Control', 'a'], focusChatInput);
+
+    function focusChatInput(){
+        //console.log(activateChat);
+        if(activateChat){
+            const chatInput = document.querySelector(".chatInput");
+            chatInput.focus();
+            setTimeout(()=>{ //清除多余的s字符
+                chatInput.value = '';
+            }, 100);
+            //console.log('on chatting');
+            chatInput.focus();
+        }
+    }
+
+
+    // ctr + q, 面板之间转移数据
+    // not works
+    //keyHandler.combinationKey(['Control', 'q'], transData);
 
     // ------------------------------
     // backup

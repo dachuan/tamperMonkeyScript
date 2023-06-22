@@ -1,0 +1,43 @@
+ <!DOCTYPE html>
+ <html lang="en">
+     <head>
+             <meta charset="UTF-8">
+                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                     <title>Document</title>
+                <style>
+                *{
+                margin: 0;
+                padding: 0;
+                }
+                .box{
+                position: absolute; /* 添加绝对定位,让box相对于页面可移动 */
+                top: 30px;
+                left: 30px;
+                width: 100px;
+                height: 100px;
+                background-color: red;
+                }
+                </style>
+     </head>
+<body>
+    <div class="box" draggable="true"></div>
+    <script>
+        var box = document.querySelector(".box");
+        console.log(box);
+        // 开始拖拽
+        box.ondragstart = function() {
+            // 记录鼠标与盒子之间的距离
+            mouse = {
+                x: event.offsetX,
+                y: event.offsetY
+            }
+        }
+        // 拖拽结束
+        box.ondragend = function() {
+            // 盒子的位置 = 鼠标与页面之间的距离 - 鼠标与盒子之间的距离
+            box.style.left = event.pageX - mouse.x + "px";
+            box.style.top = event.pageY - mouse.y + "px";
+        }
+    </script>
+     </body>
+ </html>

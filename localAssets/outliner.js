@@ -1,4 +1,23 @@
 /*
+ *  2023/6/19 下午8:52
+ *  ------------------------------
+ *  暂时屏蔽双击折叠功能
+ *
+ *  2023/6/15 下午9:09
+ *  ------------------------------
+ *  新增加item，滚动到最后
+ *
+ *  2023/6/12 上午11:08
+ *  ------------------------------
+ *  调整了outline的数据重置方法
+ *  目前可以正确还原层级结构
+ *
+ *  2023/6/11 下午1:31
+ *  ------------------------------
+ *  调整了indent的计算方法
+ *  调整了item的text获取方法
+ *  目前存储数据正确了
+ *
  *  2023/6/9 下午3:30
  *  ------------------------------
  *  调整storageKey，使得不同页面保存不同数据
@@ -31,7 +50,7 @@
  * */
 
 function outliner() {
-    console.log('ok');
+    console.log('restore outliner');
 
     // Track the Shift key state
     let shiftKeyPressed = false;
@@ -102,6 +121,8 @@ function outliner() {
             sel.addRange(newRange);
             outlineEditor.lastActiveNode = newItem; // 更新lastActiveNode
             //console.log("2 last active node is: ",outlineEditor.lastActiveNode);
+            //滚动到最后
+            outlineEditor.scrollTop = outlineEditor.scrollHeight;
         }
     };
 
@@ -121,6 +142,8 @@ function outliner() {
 
             liNode.parentNode.insertBefore(newItem, liNode.nextSibling);
             outlineEditor.lastActiveNode = newItem; // 更新lastActiveNode
+            //滚动到最后
+            outlineEditor.scrollTop = outlineEditor.scrollHeight;
         }
     };
 
@@ -129,14 +152,29 @@ function outliner() {
         const items = Array.from(editorContainer.querySelectorAll('li'));
         items.shift(); // 去除第一个start time item
         const data = [];
-    
+
+        const calculateIndentLevel = function (item) {
+            let level = 0;
+            while (item.parentElement && item.parentElement.tagName === 'UL' && item.parentElement !== editorContainer.querySelector('ul')) {
+                item = item.parentElement.parentElement;
+                level++;
+            }
+            return level;
+        };
+
         items.forEach((item) => {
             const itemData = {
-                text: item.textContent.slice(1), // Remove zero-width space
+                // 获取当前 li 元素的直接文本内容，排除子级元素的文本
+                text: Array.from(item.childNodes)
+                  .filter(node => node.nodeType === Node.TEXT_NODE)
+                  .map(node => node.textContent.trim())
+                  .join(''),
                 class: item.className,
                 index: item.dataset.index,
-                indentLevel: parseInt(item.style.marginLeft || 0) / 20,
+                indentLevel: calculateIndentLevel(item),
             };
+            //console.log('text is: ', itemData.text);
+            //console.log('indent level is: ', itemData.indentLevel);
             data.push(itemData);
         });
     
@@ -148,21 +186,79 @@ function outliner() {
 
     // Add restoreData method to the outlineEditor element
     // 重置数据
-    outlineEditor.restoreData = function () {
-        // 使用当前页面的 URL 作为读取键
+     outlineEditor.restoreData = function () {
+        //console.log('restore the outliner.');
         const storageKey = 'outlinerData_' + window.location.href;
         const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        //console.log("loading data: ", data);
+        const ulElement = editorContainer.querySelector('ul');
     
-        data.forEach((itemData) => {
+        // 保留 startItem
+        const startItem = ulElement.querySelector('.starter');
+        ulElement.innerHTML = ''; // 清空ul元素
+    
+        const createNestedUls = function (level) {
+            let ul = document.createElement('ul');
+            let currentUl = ul;
+    
+            for (let i = 1; i < level; i++) {
+                const nestedUl = document.createElement('ul');
+                currentUl.appendChild(nestedUl);
+                currentUl = nestedUl;
+            }
+    
+            return ul;
+        };
+    
+        data.forEach((itemData, index) => {
             const newItem = document.createElement('li');
             newItem.textContent = '\u200B' + itemData.text; // Zero-width space
             newItem.classList.add(itemData.class);
             newItem.dataset.index = itemData.index;
-            newItem.style.marginLeft = `${itemData.indentLevel * 20}px`;
     
-            outlineEditor.appendChild(newItem);
+            let targetUl = ulElement;
+    
+            if (itemData.indentLevel > 0) {
+                const lastItem = data[index - 1] || {};
+                const prevItem = ulElement.querySelector(`[data-index="${lastItem.index}"]`);
+    
+                if (prevItem) {
+                    if (itemData.indentLevel === lastItem.indentLevel) {
+                        targetUl = prevItem.parentElement;
+                    } else if (itemData.indentLevel > lastItem.indentLevel) {
+                        const existingUl = prevItem.querySelector('ul');
+                        if (existingUl) {
+                            targetUl = existingUl;
+                        } else {
+                            const ulsToCreate = itemData.indentLevel - (lastItem.indentLevel || 0);
+                            const nestedUls = createNestedUls(ulsToCreate);
+                            prevItem.appendChild(nestedUls);
+                            targetUl = nestedUls.querySelector('ul:last-child') || nestedUls;
+                        }
+                    } else {
+                        let parentItem = prevItem;
+                        for (let i = 0; i < lastItem.indentLevel - itemData.indentLevel; i++) {
+                            parentItem = parentItem.parentElement.parentElement;
+                        }
+                        targetUl = parentItem.parentElement;
+                    }
+                }
+            }
+    
+            targetUl.appendChild(newItem);
         });
-    };
+    
+        // 重置 startItem
+        if (startItem) {
+            const firstItem = ulElement.querySelector('li:first-child');
+            if (firstItem) {
+                ulElement.insertBefore(startItem, firstItem);
+            } else {
+                ulElement.appendChild(startItem);
+            }
+        }
+    };   
+
 
     // 获得所有的文本
     function processItems(items, indentLevel = 0) {
@@ -300,6 +396,8 @@ function outliner() {
     //------------------------------
 
     // Add a dblclick event listener to toggle fold and unfold
+    // 频率不高，双击另作他用
+    /*
     outlineEditor.addEventListener('dblclick', (e) => {
         const currentNode = e.target;
         if (currentNode.tagName === 'LI') {
@@ -310,7 +408,7 @@ function outliner() {
                 outlineEditor.unfold(currentNode);
             }
         }
-    });
+    });*/
 
     // Handle keyboard events for indent, outdent, and new items
     outlineEditor.addEventListener('keydown', (e) => {
