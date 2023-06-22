@@ -14,6 +14,11 @@
 // ==/UserScript==
 
 /*
+ * 易用性调整
+ *  2023/6/21 下午3:01
+ *  ------------------------------
+ *  可以摘录gpt的回答关键文字
+ *
  * 整合chatbox
  *  2023/6/19 下午8:53
  *  ------------------------------
@@ -457,6 +462,13 @@
             window.getSelection().removeAllRanges();
             // 滚动到最后
             //sidebar.scrollTop = sidebar.scrollHeight;
+        }
+
+        // chatbox中的文字处理
+        if (selectedText.length > 0 && chatBox.contains(target) && runScript) {
+            const dataSetIndex = Date.now();
+            olEditor.outlineEditor.appendNewItem(selectedText, 'chatItem', dataSetIndex);
+            tipOfTransferData(target);
         }
     });
 
