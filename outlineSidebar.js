@@ -15,6 +15,11 @@
 
 /*
  * 易用性调整
+ *  2023/6/22 下午8:36
+ *  ------------------------------
+ *  修改url的获取方式
+ *  解决微信公号文章会丢失部分字符串
+ *
  *  2023/6/21 下午3:01
  *  ------------------------------
  *  可以摘录gpt的回答关键文字
@@ -246,7 +251,9 @@
     // 点击title复制所有文本条目
     // 同时将数据保存到local storage
     titleContainerOutliner.addEventListener('click', function(event) {
-        var url = window.location.origin + window.location.pathname;
+        // 下面的获取有bug，微信公号文章会丢失部分字符串
+        //var url = window.location.origin + window.location.pathname;
+        var url = window.location.href;
         var title = document.title;
         var linkage = `[${title}](${url})`;
 
