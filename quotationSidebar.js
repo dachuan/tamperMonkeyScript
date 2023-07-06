@@ -14,6 +14,7 @@
 (function() {
     'use strict';
 
+
     // 脚本开关
     let runScript = false;
 

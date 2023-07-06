@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         outliner sidebar
+// @name         outliner sidebar for manifolding
 // @namespace    http://tampermonkey.net/
-// @version      0.2.7
+// @version      0.3.1
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -15,6 +15,11 @@
 
 /*
  * 易用性调整
+ *  2023/7/4 下午2:12
+ *  ------------------------------
+ *  通过mutation observer来观测是否被清除
+ *  重新加载sidebar
+ *
  *  2023/6/22 下午8:36
  *  ------------------------------
  *  修改url的获取方式
@@ -112,7 +117,7 @@
 (function() {
     'use strict';
 
-    console.log('csp');
+    console.log('full loaded.');
 
     /* styel set */
     //---------start---------------------
@@ -383,6 +388,7 @@
 
     //// 添加一个控制sidebar出现的按钮
     const toggleSidebar = document.createElement('button');
+    toggleSidebar.classList.add('outline_sidebar');
     toggleSidebar.textContent = '+';
     toggleSidebar.style.cssText = `
         position: fixed;
@@ -899,6 +905,27 @@
             chatInput.focus();
         }
     }
+
+    // Watch for DOM changes
+    const dom_observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.target === document.body) {
+                console.log('dom changed');
+                // 如果被清除就加载
+                if(document.body.querySelector('.outline_sidebar') == null){
+                    document.body.appendChild(sidebar);
+                    document.body.appendChild(toggleSidebar);
+                }
+            }
+        });
+    });
+    
+    // Start observing
+    dom_observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
 
 
     // ctr + q, 面板之间转移数据
