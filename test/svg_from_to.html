@@ -1,0 +1,195 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Span Connection Example</title>
+    <style>
+        .container {
+            position: relative;
+        }
+
+        span {
+            display: inline-block;
+            position: absolute;
+            padding: 5px;
+            border: 1px solid #000;
+            background-color: #fff;
+        }
+
+        #spanA {
+            top: 20px;
+            left: 20px;
+        }
+
+        #spanB {
+            top: 160px;
+            left: 100px;
+        }
+
+        #svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 999;
+        }
+
+        .arrow {
+            fill: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <span id="spanA">Span A</span>
+        <span id="spanB">Span B</span>
+        <svg id="svg" width="400" height="400"></svg>
+    </div>
+    <script>
+        const svg = document.getElementById('svg');
+
+        function getSpanConnectionPoints(span) {
+            const rect = span.getBoundingClientRect();
+            const topConnectionPoint = {
+                x: rect.left + rect.width / 2,
+                y: rect.top - 5
+            };
+            const bottomConnectionPoint = {
+                x: rect.left + rect.width / 2,
+                y: rect.bottom - rect.height / 2 + 5,
+            };
+            return { topConnectionPoint, bottomConnectionPoint };
+        }
+
+    function drawLineBetweenSpans(span_from, span_to, distTurn, relation="related") {
+    
+        const spanFromPoints = getSpanConnectionPoints(span_from);
+        const spanToPoints = getSpanConnectionPoints(span_to);
+      
+        let startPoint, endPoint;
+        let turn1Point = {}, turn2Point = {};
+        
+        // Determine start point
+        if (spanFromPoints.bottomConnectionPoint.y < spanToPoints.topConnectionPoint.y) {
+          startPoint = spanFromPoints.bottomConnectionPoint;
+          turn1Point.x = startPoint.x;
+          turn1Point.y = startPoint.y +distTurn;
+        } else {
+          startPoint = spanFromPoints.topConnectionPoint;
+          turn1Point.x = startPoint.x;
+          turn1Point.y = startPoint.y -distTurn;
+        }
+        
+        // Determine end point
+        if (spanToPoints.topConnectionPoint.y > spanFromPoints.bottomConnectionPoint.y) {
+          endPoint = spanToPoints.topConnectionPoint;
+        } else {
+          endPoint = spanToPoints.bottomConnectionPoint;
+        }
+      
+        turn2Point.x = endPoint.x;
+        turn2Point.y = turn1Point.y;
+      
+        const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line1.setAttribute("x1", startPoint.x);
+        line1.setAttribute("y1", startPoint.y);
+        line1.setAttribute("x2", turn1Point.x);
+        line1.setAttribute("y2", turn1Point.y);
+        line1.setAttribute("stroke", "black");
+        line1.setAttribute("stroke-width", "2");
+        svg.appendChild(line1);
+      
+        const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line2.setAttribute("x1", turn1Point.x);
+        line2.setAttribute("y1", turn1Point.y);
+        line2.setAttribute("x2", turn2Point.x);
+        line2.setAttribute("y2", turn2Point.y);
+        line2.setAttribute("stroke", "black");
+        line2.setAttribute("stroke-width", "2");
+        svg.appendChild(line2);
+      
+        const line3 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line3.setAttribute("x1", turn2Point.x);
+        line3.setAttribute("y1", turn2Point.y);
+        line3.setAttribute("x2", endPoint.x);
+        line3.setAttribute("y2", endPoint.y);
+        line3.setAttribute("stroke", "black");
+        line3.setAttribute("stroke-width", "2");
+        svg.appendChild(line3);
+      
+        // Add starting point
+        const start = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        start.setAttribute("cx", startPoint.x);
+        start.setAttribute("cy", startPoint.y);
+        start.setAttribute("r", "5");
+        start.setAttribute("fill", "black");
+        svg.appendChild(start);
+    
+        // Add relation 
+        // 创建文本元素
+        const ankor = {"x":turn1Point.x + (turn2Point.x-turn1Point.x)/2,"y":turn1Point.y}; // 卯定位置,第1,2个拐点中点
+
+        var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", ankor.x+5); 
+        text.setAttribute("y", ankor.y);
+        text.setAttribute("font-size", "10"); // 设置文本大小为10
+        text.textContent = relation;
+        svg.appendChild(text);
+    
+        // 获取文本元素的边界框大小
+        var bbox = text.getBBox();
+    
+        // 创建矩形元素
+        var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", bbox.x);
+        rect.setAttribute("y", bbox.y);
+        rect.setAttribute("width", bbox.width);
+        rect.setAttribute("height", bbox.height);
+        rect.setAttribute("fill", "none");
+        rect.setAttribute("stroke", "black");
+        svg.appendChild(rect);
+    
+        // 默认隐藏
+        rect.setAttribute("opacity", "0"); // 设置不透明度为0
+        text.setAttribute("opacity", "0");
+    
+        // 创建圆形按钮
+        var toggler = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        toggler.setAttribute("cx", ankor.x ); // 将圆形按钮放在文字最开头
+        toggler.setAttribute("cy", ankor.y );
+        toggler.setAttribute("r", "5");
+        toggler.setAttribute("fill", "red");
+        svg.appendChild(toggler);
+        
+        // 添加事件监听器
+        toggler.addEventListener("click", function() {
+          var opacity = rect.getAttribute("opacity") || "1"; // 获取当前不透明度
+          if (opacity === "1") {
+            rect.setAttribute("opacity", "0"); // 设置不透明度为0
+            text.setAttribute("opacity", "0");
+          } else {
+            rect.setAttribute("opacity", "1"); // 设置不透明度为1
+            text.setAttribute("opacity", "1");
+          }
+        });
+      
+        // Add arrowhead
+        const arrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        let arrowPoints;
+        if(startPoint.y < endPoint.y){
+          arrowPoints = `${endPoint.x},${endPoint.y} ${endPoint.x - 5},${endPoint.y - 10} ${endPoint.x + 5},${endPoint.y - 10}`;
+        }
+        else{
+          arrowPoints = `${endPoint.x},${endPoint.y} ${endPoint.x - 5},${endPoint.y + 10} ${endPoint.x + 5},${endPoint.y + 10}`;
+        }
+        arrow.setAttribute("points", arrowPoints);
+        arrow.setAttribute("class", "arrow");
+        svg.appendChild(arrow);
+    }
+
+        const spanA = document.getElementById('spanA');
+        const spanB = document.getElementById('spanB');
+        drawLineBetweenSpans(spanB, spanA, 14);
+        drawLineBetweenSpans(spanA, spanB,14,"相互之间有制约");
+    </script>
+</body>
+</html>
