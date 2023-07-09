@@ -134,6 +134,39 @@
         text.setAttribute("font-size", "10"); // 设置文本大小为10
         text.textContent = relation;
         svg.appendChild(text);
+
+        // 双击进入编辑状态
+        text.addEventListener("dblclick", function() {
+          // 编辑 text 元素的内容
+          var foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+          foreignObject.setAttribute("width", "100");
+          foreignObject.setAttribute("height", "20");
+          foreignObject.setAttribute("x", ankor.x);
+          foreignObject.setAttribute("y", text.getAttribute("y") - foreignObject.getAttribute("height"));
+          
+          var input = document.createElement("input");
+          input.setAttribute("type", "text");
+          input.setAttribute("value", text.textContent);
+          input.style.width = "100%";
+          input.style.height = "100%";
+          input.style.boxSizing = "border-box";
+          input.style.padding = "2px";
+          input.style.fontSize = "10px";
+          
+          foreignObject.appendChild(input);
+          svg.appendChild(foreignObject);
+        
+          text.setAttribute("visibility", "hidden");
+          rect.setAttribute("visibility", "hidden");
+
+          input.select();
+        
+          input.addEventListener("blur", function() {
+            text.textContent = input.value;
+            foreignObject.remove();
+            text.setAttribute("visibility", "visible");
+          });
+        });
     
         // 获取文本元素的边界框大小
         var bbox = text.getBBox();
