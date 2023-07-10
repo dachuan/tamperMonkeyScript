@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         outliner sidebar for manifolding
 // @namespace    http://tampermonkey.net/
-// @version      0.3.1
+// @version      0.3.2
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -15,6 +15,10 @@
 
 /*
  * 易用性调整
+ *  2023/7/10 上午11:29
+ *  ------------------------------
+ *  排除iframe中的执行
+ *
  *  2023/7/4 下午2:12
  *  ------------------------------
  *  通过mutation observer来观测是否被清除
@@ -114,10 +118,13 @@
  *  - 代码优化
  * */
 
+// exclude in iframe
+if (window.self !== window.top) { return; } 
+
 (function() {
     'use strict';
 
-    console.log('full loaded.');
+    console.log('not in iframe');
 
     /* styel set */
     //---------start---------------------
@@ -183,6 +190,7 @@
 
     /* 初始化数据*/
     //---------start---------------------
+
     const olEditor = outliner(); // 初始化outliner, required
     const chatBox = chatter().chatBox; // 初始化chatbox, required
     const webStorage = annotationStorage();
