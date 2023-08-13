@@ -1,13 +1,253 @@
 <!DOCTYPE html>
- <html lang="en">
-     <head>
-             <meta charset="UTF-8">
-                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                     <title>Document</title>
-     </head>
-     <body>
-         hello tm script!
-        <span style="white-space: pre-line;">这是第一行&#10;这是第二行</span>           
-        <span class="botLog" style="background-color: rgb(238, 238, 238);color: rgb(0, 0, 0);font-size: 14px;display: inline-block;text-align: left;white-space: pre-line;user-select: text;cursor: text;">构思一个prompt可以通过以下步骤来进行：\n\n1. 确定主题或内容：首先确定你想让用户进行哪方面的思考或任务。这可以是任何主题，例如写作、创作、解决问题等。\n\n2. 设定目标：明确这个prompt的目标是什么，你希望用户通过完成这个prompt能够达到什么样的结果或思考的深度。\n\n3. 分解主题：将主题或内容进一步分解成多个子主题或部分，以便用户可以更好地理解和思考。这些子主题应该是有关联的，以便用户可以通过思考一个个子主题来逐步完成整个prompt。\n\n4. 制定问题或任务：为每个子主题制定一个相关的问题或任务，以便用户能够有针对性地进行思考或行动。\n\n5. 提供背景信息：根据需要，为用户提供一些相关的背景信息，以帮助他们更好地理解和思考问题。这些信息应该简明扼要，足够但不过于详细。\n\n6. 激发创意或思考的方式：考虑通过不同的方式激发用户的创意或思考能力，例如要求他们列举观点、提供实例或举证、进行比较分析等。这有助于提高用户的参与度和思考深度。\n\n7. 设定要求或标准：根据prompt的目标，明确用户需要达到的要求或标准。这可以是关于内容、结构、逻辑、语法等方面的要求，也可以是关于思考深度、创新性等方面的要求。\n\n8. 结束提示：为prompt提供一个适当的结束提示，以告知用户何时和如何结束他们的思考或任务。\n\n9. 执行测试和改进：在设计完prompt之后，进行测试并收集用户的反馈。根据反馈进行必要的调整和改进，以确保prompt能够达到预期的效果。\n\n以上步骤可以根据具体情况进行灵活调整，但总体思路是通过分解主题，设计相关问题或任务，激发创意与思考，给出要求或标准，最终引导用户完成思考或任务的过程。</span>
-     </body>
- </html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+
+        body {
+          line-height: 2.5;
+        }
+    </style>
+
+</head>
+
+<body>
+    hello tm script!
+    调整了一下函数
+    <span style="white-space: pre-line;">这是第一行&#10;这是第二行</span>
+    <span class="botLog" style="color: rgb(0, 0, 0);font-size: 14px;display: inline-block;text-align: left;white-space: pre-line;user-select: text;cursor: text;">
+        构思一个prompt可以通过以下步骤来进行：\n\n
+        1. 确定主题或内容：首先 <span id="one" style="color:red;">确定你</span>想让用户进行哪方面的思考或任务。这可以是任何主题，例如写作、创作、解决问题等。\n\n
+        2. 设定目标：明确这个prompt的目标是什么，你希望用户通过完成这个prompt能够达到什么样的结果或思考的深度。\n\n
+        3. 分解主题：将主题或内容进一步分解成多个子主题或部分，<span id="two" style="color:red;">以便</span>用户可以更好地理解和思考。这些子主题应该是有关联的，以便用户可以通过思考一个个子主题来逐步完成整个prompt。\n\n
+        4. 制定问题或任务：为每个子主题制定一个相关的问题或任务，以便用户能够有针对性地进行思考或行动。\n\n
+        5. 提供背景信息：根据需要，为用户提供一些相关的背景信息，以帮助他们更好地理解和思考问题。这些信息应该简明扼要，足够但不过于详细。\n\n
+        6. 激发创意或思考的方式：考虑通过不同的方式激发用户的创意或思考能力，例如要求他们列举观点、提供实例或举证、进行比较分析等。这有助于提高用户的参与度和思考深度。\n\n
+        7. 设定要求或标准：根据prompt的目标，明确用户需要达到的要求或标准。这可以是关于内容、结构、逻辑、语法等方面的要求，也可以是关于思考深度、<span id="three" style="color:red;">创新性</span>等方面的要求。\n\n
+        8. 结束提示：为prompt提供一个适当的结束提示，<span id="four" style="color:red;">告知</span>用户何时和如何结束他们的思考或任务。\n\n
+        9. 执行测试和改进：在设计完prompt之后，进行测试并收集用户的反馈。根据反馈进行必要的调整和改进，以确保prompt能够达到预期的效果。\n\n以上步骤可以根据具体情况进行灵活调整，但总体思路是通过分解主题，设计相关问题或任务，激发创意与思考，给出要求或标准，最终引导用户完成思考或任务的过程。</span>
+    <span style="white-space: pre-line;">这是第3行&#10;这是第4行</span>
+    <!--
+    <script>
+
+        const w = document.querySelector("body").clientWidth;
+        const h = document.querySelector("body").clientHeight;
+        createSVG(w, h);
+        const svg = document.getElementById('svg-cover');
+
+        const spanA = document.getElementById("one");
+        const spanB = document.getElementById("two");
+        const spanC = document.getElementById("three");
+        const spanD = document.getElementById("four");
+        drawLineBetweenSpans(spanA, spanB, 10, relation = "related");
+        drawLineBetweenSpans(spanA, spanC, 10, relation = "related");
+        drawLineBetweenSpans(spanB, spanD, 10, relation = "related");
+        drawLineBetweenSpans(spanD, spanB, 10, relation = "related");
+
+        function createSVG(width, height) {
+            var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.style.position = "absolute";
+            svg.style.top = "0";
+            svg.style.left = "0";
+            svg.style.zIndex = "999";
+            svg.style.width = width + "px";
+            svg.style.height = height + "px";
+            svg.setAttribute("id", "svg-cover");
+            document.body.appendChild(svg);
+        }
+
+
+        function drawLineBetweenSpans(span_from, span_to, distTurn, relation = "related") {
+
+            function getSpanConnectionPoints(span) {
+                const rect = span.getBoundingClientRect();
+                const topConnectionPoint = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.top - 5
+                };
+                const bottomConnectionPoint = {
+                    x: rect.left + rect.width / 2,
+                    y: rect.bottom - rect.height / 2 + 5,
+                };
+                return {
+                    topConnectionPoint,
+                    bottomConnectionPoint
+                };
+            }
+
+            const spanFromPoints = getSpanConnectionPoints(span_from);
+            const spanToPoints = getSpanConnectionPoints(span_to);
+
+            let startPoint, endPoint;
+            let turn1Point = {},
+                turn2Point = {};
+
+            // Determine start point
+            if (spanFromPoints.bottomConnectionPoint.y < spanToPoints.topConnectionPoint.y) {
+                startPoint = spanFromPoints.bottomConnectionPoint;
+                turn1Point.x = startPoint.x;
+                turn1Point.y = startPoint.y + distTurn;
+            } else {
+                startPoint = spanFromPoints.topConnectionPoint;
+                turn1Point.x = startPoint.x;
+                turn1Point.y = startPoint.y - distTurn;
+            }
+
+            // Determine end point
+            if (spanToPoints.topConnectionPoint.y > spanFromPoints.bottomConnectionPoint.y) {
+                endPoint = spanToPoints.topConnectionPoint;
+            } else {
+                endPoint = spanToPoints.bottomConnectionPoint;
+            }
+
+            turn2Point.x = endPoint.x;
+            turn2Point.y = turn1Point.y;
+
+            const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line1.setAttribute("x1", startPoint.x);
+            line1.setAttribute("y1", startPoint.y);
+            line1.setAttribute("x2", turn1Point.x);
+            line1.setAttribute("y2", turn1Point.y);
+            line1.setAttribute("stroke", "black");
+            line1.setAttribute("stroke-width", "2");
+            svg.appendChild(line1);
+
+            const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line2.setAttribute("x1", turn1Point.x);
+            line2.setAttribute("y1", turn1Point.y);
+            line2.setAttribute("x2", turn2Point.x);
+            line2.setAttribute("y2", turn2Point.y);
+            line2.setAttribute("stroke", "black");
+            line2.setAttribute("stroke-width", "2");
+            svg.appendChild(line2);
+
+            const line3 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line3.setAttribute("x1", turn2Point.x);
+            line3.setAttribute("y1", turn2Point.y);
+            line3.setAttribute("x2", endPoint.x);
+            line3.setAttribute("y2", endPoint.y);
+            line3.setAttribute("stroke", "black");
+            line3.setAttribute("stroke-width", "2");
+            svg.appendChild(line3);
+
+            // Add starting point
+            const start = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            start.setAttribute("cx", startPoint.x);
+            start.setAttribute("cy", startPoint.y);
+            start.setAttribute("r", "5");
+            start.setAttribute("fill", "black");
+            svg.appendChild(start);
+
+            // Add relation 
+            // 创建文本元素
+            const ankor = {
+                "x": turn1Point.x + (turn2Point.x - turn1Point.x) / 2,
+                "y": turn1Point.y
+            }; // 卯定位置,第1,2个拐点中点
+
+            var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", ankor.x + 5);
+            text.setAttribute("y", ankor.y);
+            text.setAttribute("font-size", "10"); // 设置文本大小为10
+            text.textContent = relation;
+            svg.appendChild(text);
+
+            // 点击进入编辑状态
+            text.addEventListener("click", function() {
+                // 编辑 text 元素的内容
+                var foreignObject = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject");
+                foreignObject.setAttribute("width", "100");
+                foreignObject.setAttribute("height", "20");
+                foreignObject.setAttribute("x", ankor.x);
+                foreignObject.setAttribute("y", text.getAttribute("y") - foreignObject.getAttribute("height"));
+
+                var input = document.createElement("input");
+                input.setAttribute("type", "text");
+                input.setAttribute("value", text.textContent);
+                input.style.width = "100%";
+                input.style.height = "100%";
+                input.style.boxSizing = "border-box";
+                input.style.padding = "2px";
+                input.style.fontSize = "10px";
+
+                foreignObject.appendChild(input);
+                svg.appendChild(foreignObject);
+
+                text.setAttribute("visibility", "hidden");
+                rect.setAttribute("visibility", "hidden");
+
+                input.select();
+
+                input.addEventListener("blur", function() {
+                    text.textContent = input.value;
+                    foreignObject.remove();
+                    text.setAttribute("visibility", "visible");
+
+                    // 动态调整文本元素的边界框大小
+                    setRectAttr();
+                    rect.setAttribute("visibility", "visible");
+                });
+            });
+
+
+            // 动态调整文本元素的边界框大小
+            function setRectAttr() {
+                const bbox = text.getBBox();
+                rect.setAttribute("x", bbox.x);
+                rect.setAttribute("y", bbox.y);
+                rect.setAttribute("width", bbox.width);
+                rect.setAttribute("height", bbox.height);
+            }
+
+            // 创建矩形元素
+            var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            setRectAttr();
+            rect.setAttribute("fill", "none");
+            rect.setAttribute("stroke", "black");
+            svg.appendChild(rect);
+
+            // 默认隐藏
+            rect.setAttribute("opacity", "0"); // 设置不透明度为0
+            text.setAttribute("opacity", "0");
+
+            // 创建圆形按钮
+            var toggler = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            toggler.setAttribute("cx", ankor.x); // 将圆形按钮放在文字最开头
+            toggler.setAttribute("cy", ankor.y);
+            toggler.setAttribute("r", "5");
+            toggler.setAttribute("fill", "red");
+            svg.appendChild(toggler);
+
+            // 添加事件监听器
+            toggler.addEventListener("click", function() {
+                var opacity = rect.getAttribute("opacity") || "1"; // 获取当前不透明度
+                if (opacity === "1") {
+                    rect.setAttribute("opacity", "0"); // 设置不透明度为0
+                    text.setAttribute("opacity", "0");
+                } else {
+                    rect.setAttribute("opacity", "1"); // 设置不透明度为1
+                    text.setAttribute("opacity", "1");
+                }
+            });
+
+            // Add arrowhead
+            const arrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            let arrowPoints;
+            if (startPoint.y < endPoint.y) {
+                arrowPoints = `${endPoint.x},${endPoint.y} ${endPoint.x - 5},${endPoint.y - 10} ${endPoint.x + 5},${endPoint.y - 10}`;
+            } else {
+                arrowPoints = `${endPoint.x},${endPoint.y} ${endPoint.x - 5},${endPoint.y + 10} ${endPoint.x + 5},${endPoint.y + 10}`;
+            }
+            arrow.setAttribute("points", arrowPoints);
+            arrow.setAttribute("class", "arrow");
+            svg.appendChild(arrow);
+        }
+    </script>
+    -->
+
+</body>
+
+</html>

@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         outliner sidebar
+// @name         outliner sidebar for manifolding
 // @namespace    http://tampermonkey.net/
-// @version      0.2.7
+// @version      0.3.2
 // @description  outliner diigo like sidebar for quotations
 // @author       dcthehiker
 // @match        *://*/*
@@ -15,6 +15,20 @@
 
 /*
  * 易用性调整
+ *  2023/7/10 上午11:29
+ *  ------------------------------
+ *  排除iframe中的执行
+ *
+ *  2023/7/4 下午2:12
+ *  ------------------------------
+ *  通过mutation observer来观测是否被清除
+ *  重新加载sidebar
+ *
+ *  2023/6/22 下午8:36
+ *  ------------------------------
+ *  修改url的获取方式
+ *  解决微信公号文章会丢失部分字符串
+ *
  *  2023/6/21 下午3:01
  *  ------------------------------
  *  可以摘录gpt的回答关键文字
@@ -104,10 +118,13 @@
  *  - 代码优化
  * */
 
+// exclude in iframe
+if (window.self !== window.top) { return; } 
+
 (function() {
     'use strict';
 
-    console.log('csp');
+    console.log('not in iframe');
 
     /* styel set */
     //---------start---------------------
@@ -173,6 +190,7 @@
 
     /* 初始化数据*/
     //---------start---------------------
+
     const olEditor = outliner(); // 初始化outliner, required
     const chatBox = chatter().chatBox; // 初始化chatbox, required
     const webStorage = annotationStorage();
@@ -246,7 +264,9 @@
     // 点击title复制所有文本条目
     // 同时将数据保存到local storage
     titleContainerOutliner.addEventListener('click', function(event) {
-        var url = window.location.origin + window.location.pathname;
+        // 下面的获取有bug，微信公号文章会丢失部分字符串
+        //var url = window.location.origin + window.location.pathname;
+        var url = window.location.href;
         var title = document.title;
         var linkage = `[${title}](${url})`;
 
@@ -376,6 +396,7 @@
 
     //// 添加一个控制sidebar出现的按钮
     const toggleSidebar = document.createElement('button');
+    toggleSidebar.classList.add('outline_sidebar');
     toggleSidebar.textContent = '+';
     toggleSidebar.style.cssText = `
         position: fixed;
@@ -892,6 +913,27 @@
             chatInput.focus();
         }
     }
+
+    // Watch for DOM changes
+    const dom_observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.target === document.body) {
+                console.log('dom changed');
+                // 如果被清除就加载
+                if(document.body.querySelector('.outline_sidebar') == null){
+                    document.body.appendChild(sidebar);
+                    document.body.appendChild(toggleSidebar);
+                }
+            }
+        });
+    });
+    
+    // Start observing
+    dom_observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
 
 
     // ctr + q, 面板之间转移数据

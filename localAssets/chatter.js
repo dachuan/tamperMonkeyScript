@@ -244,6 +244,7 @@ function chatter(){
             model: 'gpt-3.5-turbo',
             messages: messages,
             stream: true,
+            temperature: 0.8
         };
 
         // 16k
