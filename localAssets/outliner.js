@@ -1,4 +1,9 @@
 /*
+ *  2023/8/21 下午9:41
+ *  ------------------------------
+ *  设置ctr+shift+d，cut
+ *  设置ctr+shift+p，paste
+ *
  *  2023/8/21 下午5:33
  *  ------------------------------
  *  outdent 修改成正确的层级关系
@@ -337,6 +342,7 @@ function outliner() {
         }
     };
 
+
     // Add fold method to the outlineEditor element
     outlineEditor.fold = function (currentNode) {
         if (currentNode.tagName === 'LI') {
@@ -434,6 +440,36 @@ function outliner() {
             outlineEditor.createNewItem("");
         }
     });
+
+    // dd,p for move items
+    // Add cut method to the outlineEditor
+    let cut_item = {};
+    outlineEditor.addEventListener('keydown', (e) => {
+        if (e.key === 'D' && e.ctrlKey) {
+            e.preventDefault();
+            const selection = window.getSelection();
+            const currentNode = getClosestLiElement(selection.anchorNode);
+            if (currentNode && currentNode.tagName === 'LI') {
+                cut_item = currentNode;
+                currentNode.parentNode.removeChild(currentNode);
+            }
+        }
+    });
+
+    // Add paste method
+    outlineEditor.addEventListener('keydown', (e) => {
+        if (e.key === 'P' && e.ctrlKey) {
+            e.preventDefault();
+            const selection = window.getSelection();
+            const currentNode = getClosestLiElement(selection.anchorNode);
+            if (currentNode && currentNode.tagName === 'LI') {
+                console.log(JSON.stringify(cut_item));
+                const parentList = currentNode.parentNode;
+                parentList.insertBefore(cut_item, currentNode.nextSibling);
+            }
+        }
+    });
+
 
     // Modify keydown event listener to use Selection API
     outlineEditor.addEventListener('keydown', (e) => {
