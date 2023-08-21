@@ -1,4 +1,8 @@
 /*
+ *  2023/8/21 下午5:33
+ *  ------------------------------
+ *  outdent 修改成正确的层级关系
+ *
  *  2023/6/19 下午8:52
  *  ------------------------------
  *  暂时屏蔽双击折叠功能
@@ -319,7 +323,8 @@ function outliner() {
             const parentList = currentNode.parentNode;
             if (parentList !== outlineEditor) {
                 const grandParentList = parentList.parentNode;
-                grandParentList.parentNode.insertBefore(currentNode, parentList.nextSibling);
+                grandParentList.parentNode.insertBefore(currentNode, grandParentList.nextSibling);   // 插入到grandParent的同级而不是parent, parent是ul 
+                //grandParentList.parentNode.insertBefore(currentNode, parentList.nextSibling); // 反向outdent有误
                 if (parentList.children.length === 0) {
                     grandParentList.removeChild(parentList);
                 }
