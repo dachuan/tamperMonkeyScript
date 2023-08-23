@@ -1,4 +1,18 @@
 /*
+ *  2023/8/23 下午9:03
+ *  ------------------------------
+ *  Add fold all and unfold all by shift+ctr+z
+ *  全部list展开和收缩
+ *
+ *  2023/8/21 下午9:41
+ *  ------------------------------
+ *  设置ctr+shift+d，cut
+ *  设置ctr+shift+p，paste
+ *
+ *  2023/8/21 下午5:33
+ *  ------------------------------
+ *  outdent 修改成正确的层级关系
+ *
  *  2023/6/19 下午8:52
  *  ------------------------------
  *  暂时屏蔽双击折叠功能
@@ -319,7 +333,8 @@ function outliner() {
             const parentList = currentNode.parentNode;
             if (parentList !== outlineEditor) {
                 const grandParentList = parentList.parentNode;
-                grandParentList.parentNode.insertBefore(currentNode, parentList.nextSibling);
+                grandParentList.parentNode.insertBefore(currentNode, grandParentList.nextSibling);   // 插入到grandParent的同级而不是parent, parent是ul 
+                //grandParentList.parentNode.insertBefore(currentNode, parentList.nextSibling); // 反向outdent有误
                 if (parentList.children.length === 0) {
                     grandParentList.removeChild(parentList);
                 }
@@ -331,6 +346,7 @@ function outliner() {
             }
         }
     };
+
 
     // Add fold method to the outlineEditor element
     outlineEditor.fold = function (currentNode) {
@@ -430,6 +446,36 @@ function outliner() {
         }
     });
 
+    // dd,p for move items
+    // Add cut method to the outlineEditor
+    let cut_item = {};
+    outlineEditor.addEventListener('keydown', (e) => {
+        if (e.key === 'D' && e.ctrlKey) {
+            e.preventDefault();
+            const selection = window.getSelection();
+            const currentNode = getClosestLiElement(selection.anchorNode);
+            if (currentNode && currentNode.tagName === 'LI') {
+                cut_item = currentNode;
+                currentNode.parentNode.removeChild(currentNode);
+            }
+        }
+    });
+
+    // Add paste method
+    outlineEditor.addEventListener('keydown', (e) => {
+        if (e.key === 'P' && e.ctrlKey) {
+            e.preventDefault();
+            const selection = window.getSelection();
+            const currentNode = getClosestLiElement(selection.anchorNode);
+            if (currentNode && currentNode.tagName === 'LI') {
+                console.log(JSON.stringify(cut_item));
+                const parentList = currentNode.parentNode;
+                parentList.insertBefore(cut_item, currentNode.nextSibling);
+            }
+        }
+    });
+
+
     // Modify keydown event listener to use Selection API
     outlineEditor.addEventListener('keydown', (e) => {
         if (e.key === 'z' && e.ctrlKey) {
@@ -443,6 +489,33 @@ function outliner() {
                 } else {
                     outlineEditor.unfold(currentNode);
                 }
+            }
+        }
+    });
+
+    // Add fold all and unfold all by shift+ctr+z
+
+    let checkFoldAll = false;
+    outlineEditor.addEventListener('keydown', (e) => {
+        if (e.key === 'Z' && e.ctrlKey) {
+            e.preventDefault();
+            // get all li under container
+            // editorContainer
+            const lis = editorContainer.querySelectorAll("li");
+
+            if(checkFoldAll){
+                for(let li of lis) {
+                    //console.log(li);
+                    outlineEditor.unfold(li);
+                }
+                checkFoldAll = false;
+
+            }
+            else{
+                for(let li of lis) {
+                    outlineEditor.fold(li);
+                }
+                checkFoldAll = true;
             }
         }
     });

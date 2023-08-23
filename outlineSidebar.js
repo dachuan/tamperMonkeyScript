@@ -715,7 +715,7 @@ if (window.self !== window.top) { return; }
     // 双击互通
     sidebar.addEventListener('dblclick', (event) => {
         const target = event.target;
-        const targetText = target.textContent;
+        const targetText = target.textContent.replace(/\u200B/g, ''); //remove ultra 200b 
         if (target.classList.contains("inner-item") || 
             target.classList.contains("chatItem")    ||
             target.classList.contains("snippet")
