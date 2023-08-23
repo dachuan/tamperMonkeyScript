@@ -1,4 +1,9 @@
 /*
+ *  2023/8/23 下午9:03
+ *  ------------------------------
+ *  Add fold all and unfold all by shift+ctr+z
+ *  全部list展开和收缩
+ *
  *  2023/8/21 下午9:41
  *  ------------------------------
  *  设置ctr+shift+d，cut
@@ -484,6 +489,33 @@ function outliner() {
                 } else {
                     outlineEditor.unfold(currentNode);
                 }
+            }
+        }
+    });
+
+    // Add fold all and unfold all by shift+ctr+z
+
+    let checkFoldAll = false;
+    outlineEditor.addEventListener('keydown', (e) => {
+        if (e.key === 'Z' && e.ctrlKey) {
+            e.preventDefault();
+            // get all li under container
+            // editorContainer
+            const lis = editorContainer.querySelectorAll("li");
+
+            if(checkFoldAll){
+                for(let li of lis) {
+                    //console.log(li);
+                    outlineEditor.unfold(li);
+                }
+                checkFoldAll = false;
+
+            }
+            else{
+                for(let li of lis) {
+                    outlineEditor.fold(li);
+                }
+                checkFoldAll = true;
             }
         }
     });
