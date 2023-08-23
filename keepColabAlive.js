@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         KeyListener
+// @name         Keep Colab Alive
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
+// @version      0.0.2
 // @description  key listener for activate some function
 // @author       dcthehiker
 // @match        http*://colab.research.google.com/drive/*
