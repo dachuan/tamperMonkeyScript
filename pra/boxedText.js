@@ -8,7 +8,7 @@
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        none
 // ==/UserScript==
- // ==UserScript== // @name Add Red Border to Selected Text // @namespace http://tampermonkey.net/ // @version 1.0 // @description Adds a red border to selected text on the page. // @match *://*/* // @grant none // ==/UserScript==
+
 (function() {
     'use strict';
     // Add event listener to detect when text is selected
